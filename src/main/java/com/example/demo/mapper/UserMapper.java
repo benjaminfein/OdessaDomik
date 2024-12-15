@@ -1,0 +1,47 @@
+package com.example.demo.mapper;
+
+import com.example.demo.dto.user.CreateUserDTO;
+import com.example.demo.dto.user.UserDTO;
+import com.example.demo.model.User;
+
+public class UserMapper {
+    public static UserDTO mapToUserDTO(User user) {
+        return new UserDTO(
+                user.getId(),
+                user.getEmail(),
+                user.getPhoneNumber(),
+                user.getName(),
+                user.isActive(),
+                user.getPassword()
+        );
+    }
+
+    public static User mapToUser(UserDTO userDTO) {
+        return new User(
+                userDTO.getId(),
+                userDTO.getEmail(),
+                userDTO.getPhoneNumber(),
+                userDTO.getName(),
+                userDTO.isActive(),
+                userDTO.getPassword()
+        );
+    }
+
+    public static CreateUserDTO mapToCreateUserDTO(User user) {
+        return new CreateUserDTO(
+                user.getEmail(),
+                user.getPhoneNumber(),
+                user.getName(),
+                user.getPassword()
+        );
+    }
+
+    public static User mapToUser(CreateUserDTO createUserDTO) {
+        return new User(
+                createUserDTO.getEmail(),
+                createUserDTO.getPhoneNumber(),
+                createUserDTO.getName(),
+                createUserDTO.getPassword()
+        );
+    }
+}
