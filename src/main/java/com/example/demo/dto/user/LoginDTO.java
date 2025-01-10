@@ -1,5 +1,7 @@
 package com.example.demo.dto.user;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,12 +9,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDTO {
-    private Long id;
-    private String username;
+public class LoginDTO {
+    @NotEmpty
+    @Email
     private String email;
-    private String phoneNumber;
-    private String role;
-    private String name;
+    @NotEmpty
     private String password;
 }

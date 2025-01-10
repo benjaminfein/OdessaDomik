@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.ApartmentDTO;
+import com.example.demo.repository.UserRepository;
 import com.example.demo.service.ApartmentService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
