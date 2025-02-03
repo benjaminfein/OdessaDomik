@@ -45,6 +45,7 @@ public class SecurityConfig {
                                 "/api/user/register",
                                 "/api/user/login"
                         ).permitAll()
+                        .requestMatchers("/api/admin/**").hasAuthority("admin")
                         .anyRequest().permitAll() // TODO: Ограничить доступ после тестирования
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
