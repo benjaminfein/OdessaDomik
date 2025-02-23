@@ -5,10 +5,13 @@ import com.example.demo.exception.ApartmentNotFoundException;
 import com.example.demo.mapper.ApartmentMapper;
 import com.example.demo.model.Apartment;
 import com.example.demo.repository.ApartmentRepository;
+import com.example.demo.repository.UserRepository;
 import com.example.demo.service.ApartmentService;
+import com.example.demo.service.ReservationService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,6 +19,8 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class ApartmentServiceImpl implements ApartmentService {
     private ApartmentRepository apartmentRepository;
+    private UserRepository userRepository;
+    private ReservationService reservationService;
 
     @Override
     public ApartmentDTO createApartment(ApartmentDTO apartmentDTO) {
@@ -66,5 +71,30 @@ public class ApartmentServiceImpl implements ApartmentService {
                 () -> new ApartmentNotFoundException("Apartment is not exist with given id: " + id)
         );
         apartmentRepository.deleteById(id);
+    }
+
+    @Override
+    public List<ApartmentDTO> findAvailableApartments(LocalDate startDate, LocalDate endDate, int guestCount) {
+        List<Apartment> availableApartments;
+
+        if (startDate == null || endDate == null) {
+            // Если даты не переданы, ищем просто по количеству гостей
+            availableApartments = apartmentRepository.findByCountOfSleepPlacesGreaterThanEqual(guestCount);
+        } else {
+            // Если даты переданы, фильтруем забронированные квартиры
+            List<Long> bookedApartmentIds = reservationService.findBookedApartmentIds(startDate, endDate);
+
+            availableApartments = bookedApartmentIds.isEmpty()
+                    ? apartmentRepository.findByCountOfSleepPlacesGreaterThanEqual(guestCount)
+                    : apartmentRepository.findByIdNotInAndCountOfSleepPlacesGreaterThanEqual(bookedApartmentIds, guestCount);
+        }
+
+        return availableApartments.stream().map(ApartmentMapper::mapToApartmentDTO).toList();
+    }
+
+    @Override
+    public List<ApartmentDTO> findApartmentsByGuestCount(int guestCount) {
+        List<Apartment> apartments = apartmentRepository.findByCountOfSleepPlacesGreaterThanEqual(guestCount);
+        return apartments.stream().map(ApartmentMapper::mapToApartmentDTO).toList();
     }
 }

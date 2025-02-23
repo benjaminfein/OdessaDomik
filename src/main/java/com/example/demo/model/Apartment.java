@@ -1,13 +1,17 @@
 package com.example.demo.model;
 
+import com.example.demo.dto.ApartmentDTO;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Data
 @Entity
-@Table(name = "apartmentInfo", schema = "public")
+@Table(name = "apartment_info", schema = "public")
 @NoArgsConstructor
 @AllArgsConstructor
 public class Apartment {
@@ -47,4 +51,23 @@ public class Apartment {
 //    private void init() {
 //        dateOfCreated = LocalDateTime.now();
 //    }
+
+    public ApartmentDTO getApartmentDTO() {
+        ApartmentDTO apartmentDTO = new ApartmentDTO();
+
+        apartmentDTO.setId(id);
+        apartmentDTO.setName(name);
+        apartmentDTO.setShortDescription(shortDescription);
+        apartmentDTO.setDescription(description);
+        apartmentDTO.setAddress(address);
+        apartmentDTO.setPrice(price);
+        apartmentDTO.setHasParkingLot(hasParkingLot);
+        apartmentDTO.setHasWiFi(hasWiFi);
+        apartmentDTO.setFloorNumber(floorNumber);
+        apartmentDTO.setAreaOfApartment(areaOfApartment);
+        apartmentDTO.setHasSeaView(hasSeaView);
+        apartmentDTO.setCountOfSleepPlaces(countOfSleepPlaces);
+
+        return apartmentDTO;
+    }
 }
