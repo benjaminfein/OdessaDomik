@@ -1,6 +1,8 @@
 package com.example.demo.service.impl;
 
 import com.example.demo.dto.ReservationDTO;
+import com.example.demo.exception.ApartmentNotFoundException;
+import com.example.demo.exception.ReservationNotFoundException;
 import com.example.demo.mapper.ApartmentMapper;
 import com.example.demo.mapper.ReservationMapper;
 import com.example.demo.model.Apartment;
@@ -38,5 +40,13 @@ public class ReservationServiceImpl implements ReservationService {
         List<Reservation> reservations = reservationRepository.findAll();
         return reservations.stream().map(ReservationMapper::mapToReservationDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteReservation(Long id) {
+        Reservation reservation = reservationRepository.findById(id).orElseThrow(
+                () -> new ReservationNotFoundException("Reservation is not exist with given id: " + id)
+        );
+        reservationRepository.deleteById(id);
     }
 }

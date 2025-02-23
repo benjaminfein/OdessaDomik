@@ -85,9 +85,15 @@ public class ApartmentController {
         return new ResponseEntity<>(savedReservation, HttpStatus.CREATED);
     }
 
-    @GetMapping("/get-reservation")
+    @GetMapping("/get-reservations")
     public ResponseEntity<List<ReservationDTO>> getAllReservations() {
         List<ReservationDTO> reservations = reservationService.getAllReservations();
         return ResponseEntity.ok(reservations);
+    }
+
+    @DeleteMapping("/delete-reservation/{id}")
+    public ResponseEntity<String> deleteReservation(@PathVariable Long id) {
+        reservationService.deleteReservation(id);
+        return ResponseEntity.ok("Reservation deleted successfully!");
     }
 }
