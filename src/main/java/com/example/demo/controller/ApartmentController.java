@@ -78,7 +78,7 @@ public class ApartmentController {
         return ResponseEntity.ok(availableApartments);
     }
 
-    //Endpoints for reservations(rn its for test)
+    //Endpoints for Reservations(rn its for test)
     @PostMapping("/create-reservation")
     public ResponseEntity<ReservationDTO> createReservation(@RequestBody ReservationDTO reservationDTO) {
         ReservationDTO savedReservation = reservationService.createReservation(reservationDTO);
