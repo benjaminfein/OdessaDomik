@@ -1,5 +1,6 @@
 package com.example.demo.repository;
 
+import com.example.demo.enums.ReservationStatus;
 import com.example.demo.model.Reservation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,4 +19,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
         OR (r.checkInDate BETWEEN :checkInDate AND :checkOutDate)
         """)
     List<Long> findBookedApartmentIds(@Param("checkInDate") LocalDate checkInDate, @Param("checkOutDate") LocalDate checkOutDate);
+
+    void deleteByStatus(ReservationStatus status);
 }

@@ -5,6 +5,7 @@ import com.example.demo.dto.ReservationDTO;
 import com.example.demo.mapper.ApartmentMapper;
 import com.example.demo.service.ApartmentService;
 import com.example.demo.service.ReservationService;
+import jakarta.mail.MessagingException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -95,5 +96,29 @@ public class ApartmentController {
     public ResponseEntity<String> deleteReservation(@PathVariable Long id) {
         reservationService.deleteReservation(id);
         return ResponseEntity.ok("Reservation deleted successfully!");
+    }
+
+    @DeleteMapping("/delete-pending")
+    public ResponseEntity<String> deletePendingReservations() {
+        reservationService.deletePendingReservations();
+        return ResponseEntity.ok("Все неподтвержденные брони удалены.");
+    }
+
+    @PutMapping("/reservation-on-hold/{id}")
+    public ResponseEntity<String> placeReservationOnHold(@PathVariable Long id) throws MessagingException {
+        reservationService.pendingReservation(id);
+        return ResponseEntity.ok("Reservation confirmed and confirmation emails sent!");
+    }
+
+    @PutMapping("/cancel-reservation/{id}")
+    public ResponseEntity<String> cancelReservation(@PathVariable Long id) throws MessagingException {
+        reservationService.cancelReservation(id);
+        return ResponseEntity.ok("Reservation canceled and canceling emails sent!");
+    }
+
+    @PutMapping("/confirm-reservation/{id}")
+    public ResponseEntity<String> confirmReservation(@PathVariable Long id) throws MessagingException {
+        reservationService.confirmReservation(id);
+        return ResponseEntity.ok("Reservation confirmed and confirmation emails sent!");
     }
 }

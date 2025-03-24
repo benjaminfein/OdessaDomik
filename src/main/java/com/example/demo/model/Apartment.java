@@ -70,4 +70,27 @@ public class Apartment {
 
         return apartmentDTO;
     }
+
+    public String getComplexName() {
+        String key = getAddressKey();
+        return switch (key) {
+            case "Гагаринское плато 5/2" -> "Гагарин Плаза";
+            case "Улица Генуэзская 3в" -> "42 Жемчужина";
+            case "Улица Генуэзская 3" -> "26 Жемчужина";
+            default -> "Неизвестный комплекс";
+        };
+    }
+
+    // Метод для извлечения ключа из адреса
+    private String getAddressKey() {
+        if (address.toLowerCase().contains("гагаринское плато")) {
+            return "Гагаринское плато 5/2";
+        } else if (address.toLowerCase().contains("улица генуэзская 3в")) {
+            return "Улица Генуэзская 3в";
+        } else if (address.toLowerCase().contains("улица генуэзская 3")) {
+            return "Улица Генуэзская 3";
+        } else {
+            return "неизвестный адрес";
+        }
+    }
 }

@@ -1,6 +1,6 @@
 package com.example.demo.dto;
 
-import com.example.demo.model.Apartment;
+import com.example.demo.enums.ReservationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,4 +15,8 @@ public class ReservationDTO {
     private Long apartmentId;
     private LocalDate checkInDate;
     private LocalDate checkOutDate;
+    private Long guestCount;
+    private ReservationStatus status;
+    private Long userId;
+    private String clientEmail;
 }

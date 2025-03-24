@@ -105,7 +105,7 @@ public class UserController {
         try {
             //check if username/email are used or not
             var otherUser = userRepository.findByEmail(createUserDTO.getEmail());
-            if (otherUser != null) {
+            if (otherUser.isPresent()) {
                 return ResponseEntity.badRequest().body("Email is already used");
             }
 
@@ -151,7 +151,8 @@ public class UserController {
                     )
             );
 
-            User user = userRepository.findByEmail(loginDTO.getEmail());
+            User user = userRepository.findByEmail(loginDTO.getEmail())
+                    .orElseThrow(() -> new RuntimeException("Пользователь с таким email не найден"));
             String jwtToken = createJwtToken(user);
 
             Cookie cookie = new Cookie("Token", jwtToken);
