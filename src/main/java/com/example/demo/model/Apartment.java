@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Entity
@@ -18,7 +19,7 @@ public class Apartment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name = "name", nullable = false, unique = true)
+    @Column(name = "name", nullable = false)
     private String name;
     @Column(name = "shortDescription")
     private String shortDescription;
@@ -40,17 +41,10 @@ public class Apartment {
     private Boolean hasSeaView = false;
     @Column(name = "countOfSleepPlaces")
     private Integer countOfSleepPlaces;
-
-//    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY,
-//    mappedBy = "product")
-//    private List<Image> images = new ArrayList<>();
-//    private Long previewImageId;
-//    private LocalDateTime dateOfCreated;
-//
-//    @PrePersist
-//    private void init() {
-//        dateOfCreated = LocalDateTime.now();
-//    }
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "apartment_photos", joinColumns = @JoinColumn(name = "apartment_id"))
+    @Column(name = "photo_url")
+    private List<String> photoUrls;
 
     public ApartmentDTO getApartmentDTO() {
         ApartmentDTO apartmentDTO = new ApartmentDTO();

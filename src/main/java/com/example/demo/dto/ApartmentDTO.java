@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,4 +22,5 @@ public class ApartmentDTO {
     private Integer areaOfApartment;
     private Boolean hasSeaView = false;
     private Integer countOfSleepPlaces;
+    private List<String> photoUrls;
 }

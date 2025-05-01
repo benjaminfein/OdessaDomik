@@ -17,7 +17,8 @@ public class ApartmentMapper {
                 apartment.getFloorNumber(),
                 apartment.getAreaOfApartment(),
                 apartment.getHasSeaView(),
-                apartment.getCountOfSleepPlaces()
+                apartment.getCountOfSleepPlaces(),
+                apartment.getPhotoUrls()
         );
     }
 
@@ -34,7 +35,9 @@ public class ApartmentMapper {
                 apartmentDTO.getFloorNumber(),
                 apartmentDTO.getAreaOfApartment(),
                 apartmentDTO.getHasSeaView(),
-                apartmentDTO.getCountOfSleepPlaces()
+                apartmentDTO.getCountOfSleepPlaces(),
+                apartmentDTO.getPhotoUrls()
         );
     }
 }
+

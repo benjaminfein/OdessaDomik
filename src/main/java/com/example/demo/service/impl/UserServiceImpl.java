@@ -26,4 +26,11 @@ public class UserServiceImpl implements UserService {
         return userList.stream().map(UserMapper::mapToUserDTO)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public UserDTO getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Пользователь с таким id не найден"));
+        return UserMapper.mapToUserDTO(user);
+    }
 }

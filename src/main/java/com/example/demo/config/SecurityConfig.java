@@ -43,15 +43,29 @@ public class SecurityConfig {
                                 "/api/user/allUsers",
                                 "/api/user/delete/**",
                                 "/api/user/register",
-                                "/api/user/login"
+                                "/api/user/login",
+                                "/api/apartments/create-reservation",
+                                "/api/apartments/reservation-on-hold/{id}"
                         ).permitAll()
-                        .requestMatchers("/api/admin/**").hasAuthority("admin")
+                        .requestMatchers(
+                                "/api/admin/**"
+//                                "/api/apartments/get-reservations",
+//                                "/api/apartments/delete-reservation/{id}",
+//                                "/api/apartments/delete-pending",
+//                                "/api/apartments/confirm-reservation/{id}",
+//                                "/api/apartments/cancel-reservation/{id}",
+//                                "/api/email-templates/get-template-by-key/{templateKey}",
+//                                "/api/email-templates/get-all-templates",
+//                                "/api/email-templates/update-template/{id}",
+//                                "/api/email-templates/delete-template/{id}"
+                        ).hasAuthority("admin")
                         .anyRequest().permitAll() // TODO: Ограничить доступ после тестирования
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
     }
+
 
     @Bean
     public JwtDecoder jwtDecoder() {

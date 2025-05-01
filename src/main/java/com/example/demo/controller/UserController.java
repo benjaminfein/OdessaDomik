@@ -183,6 +183,12 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
+    @GetMapping("{id}")
+    public ResponseEntity<UserDTO> getUser(@PathVariable("id") Long id) {
+        UserDTO userDTO = userService.getUserById(id);
+        return ResponseEntity.ok(userDTO);
+    }
+
     private String createJwtToken(User user) {
         Instant now = Instant.now();
 
