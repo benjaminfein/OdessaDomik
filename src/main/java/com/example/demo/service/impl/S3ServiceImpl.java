@@ -19,6 +19,7 @@ import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -73,24 +74,26 @@ public class S3ServiceImpl implements S3Service {
     }
 
     @Override
-    public void deleteFile(Long apartmentId, String filename) {
+    public void deleteFiles(Long apartmentId, List<String> fileNames) {
         AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
         S3Client s3Client = S3Client.builder()
                 .region(Region.of(region))
                 .credentialsProvider(StaticCredentialsProvider.create(credentials))
                 .build();
 
-        String key = "apartments/" + apartmentId + "/" + filename;
-        String fileUrl = "https://" + bucketName + ".s3." + region + ".amazonaws.com/" + key;
-
-        s3Client.deleteObject(builder -> builder.bucket(bucketName).key(key));
-
         Apartment apartment = apartmentRepository.findById(apartmentId)
                 .orElseThrow(() -> new RuntimeException("Квартира не найдена"));
 
-        List<String> updatedUrls = apartment.getPhotoUrls().stream()
-                .filter(url -> !url.equals(fileUrl))
-                .collect(Collectors.toList());
+        List<String> updatedUrls = new ArrayList<>(apartment.getPhotoUrls());
+
+        for (String fileName : fileNames) {
+            String key = "apartments/" + apartmentId + "/" + fileName;
+            String fileUrl = "https://" + bucketName + ".s3." + region + ".amazonaws.com/" + key;
+
+            s3Client.deleteObject(builder -> builder.bucket(bucketName).key(key));
+
+            updatedUrls.removeIf(url -> url.equals(fileUrl));
+        }
 
         apartment.setPhotoUrls(updatedUrls);
         apartmentRepository.save(apartment);

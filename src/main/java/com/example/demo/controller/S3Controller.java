@@ -32,10 +32,10 @@ public class S3Controller {
         return ResponseEntity.ok(s3Service.listFiles(apartmentId));
     }
 
-    @DeleteMapping("/delete/{apartmentId}")
-    public ResponseEntity<String> deleteFile(@PathVariable Long apartmentId,
-                                             @RequestParam("fileName") String fileName) {
-        s3Service.deleteFile(apartmentId, fileName);
-        return ResponseEntity.ok("Файл удалён.");
+    @DeleteMapping("/delete-multiple/{apartmentId}")
+    public ResponseEntity<String> deleteFiles(@PathVariable Long apartmentId,
+                                              @RequestParam("fileNames") List<String> fileNames) {
+        s3Service.deleteFiles(apartmentId, fileNames);
+        return ResponseEntity.ok("Файлы удалены.");
     }
 }

@@ -8,7 +8,7 @@ import java.util.List;
 public interface S3Service {
     void uploadFiles(List<MultipartFile> files, Long apartmentId) throws IOException;
 
-    void deleteFile(Long apartmentId, String filename);
+    void deleteFiles(Long apartmentId, List<String> fileNames);
 
     List<String> listFiles(Long apartmentId);
 }
