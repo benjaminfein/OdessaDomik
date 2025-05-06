@@ -29,12 +29,13 @@ public class SecurityConfig {
     @Value("${security.jwt.secret-key}")
     private String jwtSecretKey;
 
-    @Value("${frontend.url:http://localhost:3000}")
+    @Value("${frontend.url:https://odessadomik.com}")
     private String frontendUrl;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
+                .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
