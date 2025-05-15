@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 
+import com.example.demo.dto.user.ChangePasswordDTO;
 import com.example.demo.dto.user.CreateUserDTO;
 import com.example.demo.dto.user.LoginDTO;
 import com.example.demo.dto.user.UserDTO;
@@ -230,6 +231,22 @@ public class UserController {
     public ResponseEntity<UserDTO> getUser(@PathVariable("id") Long id) {
         UserDTO userDTO = userService.getUserById(id);
         return ResponseEntity.ok(userDTO);
+    }
+
+    @PutMapping("{id}")
+    public ResponseEntity<UserDTO> updateUser(@PathVariable("id") Long id, @RequestBody UserDTO userDTO) {
+        UserDTO updatedUserDTO = userService.updateUser(id, userDTO);
+        return ResponseEntity.ok(updatedUserDTO);
+    }
+
+    @PutMapping("/change-password/{userId}")
+    public ResponseEntity<?> changePassword(@PathVariable Long userId, @RequestBody ChangePasswordDTO changePasswordDTO) {
+        try {
+            userService.changePassword(userId, changePasswordDTO);
+            return ResponseEntity.ok("Пароль успешно изменен");
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        }
     }
 
     private String createJwtToken(User user) {
