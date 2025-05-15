@@ -29,7 +29,7 @@ public class SecurityConfig {
     @Value("${security.jwt.secret-key}")
     private String jwtSecretKey;
 
-    @Value("${frontend.url:https://odessadomik.com}")
+    @Value("${frontend.url}")
     private String frontendUrl;
 
     @Bean

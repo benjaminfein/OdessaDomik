@@ -46,7 +46,6 @@ public class ApartmentController {
     @PutMapping("{id}")
     public ResponseEntity<ApartmentDTO> updateApartment(@PathVariable("id") Long id,
                                                         @RequestBody ApartmentDTO apartmentToUpdate) {
-        log.info(apartmentToUpdate.getAddress());
         ApartmentDTO apartmentDTO = apartmentService.updateApartment(id, apartmentToUpdate);
         return ResponseEntity.ok(apartmentDTO);
     }

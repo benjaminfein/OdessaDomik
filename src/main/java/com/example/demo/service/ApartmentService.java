@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface ApartmentService {
-
     ApartmentDTO createApartment(ApartmentDTO apartmentDTO);
 
     ApartmentDTO getApartmentById(Long id);

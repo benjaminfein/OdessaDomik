@@ -13,7 +13,6 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
-    //    implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -27,8 +26,12 @@ public class User {
     private String name;
     @Column(name = "password", length = 1000)
     private String password;
+    @Column(name = "role")
     private String role;
+    @Column(name = "dateOfCreated")
     private Date dateOfCreated;
+    @Column(name = "email_confirmed")
+    private Boolean emailConfirmed = false;
 
     public User(Long id, String username, String email, String phoneNumber, String role, String name, String password) {
         this.id = id;

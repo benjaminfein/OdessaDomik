@@ -4,8 +4,11 @@ package com.example.demo.controller;
 import com.example.demo.dto.user.CreateUserDTO;
 import com.example.demo.dto.user.LoginDTO;
 import com.example.demo.dto.user.UserDTO;
+import com.example.demo.model.ConfirmationToken;
 import com.example.demo.model.User;
+import com.example.demo.repository.ConfirmationTokenRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.EmailService;
 import com.example.demo.service.UserService;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import jakarta.servlet.http.Cookie;
@@ -25,15 +28,14 @@ import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @CrossOrigin("*")
 @Slf4j
@@ -46,15 +48,24 @@ public class UserController {
     @Value("${security.jwt.issuer}")
     private String jwtIssuer;
 
+    @Value("${frontend.url}")
+    private String frontendUrl;
+
     private final UserRepository userRepository;
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
+    private final ConfirmationTokenRepository confirmationTokenRepository;
+    private final EmailService emailService;
 
     @Autowired
-    public UserController(UserRepository userRepository, AuthenticationManager authenticationManager, UserService userService) {
+    public UserController(UserRepository userRepository, AuthenticationManager authenticationManager,
+                          UserService userService, ConfirmationTokenRepository confirmationTokenRepository,
+                          EmailService emailService) {
         this.userRepository = userRepository;
         this.authenticationManager = authenticationManager;
         this.userService = userService;
+        this.confirmationTokenRepository = confirmationTokenRepository;
+        this.emailService = emailService;
     }
 
     @GetMapping("/profile")
@@ -91,36 +102,44 @@ public class UserController {
             return ResponseEntity.badRequest().body(errorsMap);
         }
 
-        var bCryptEncoder = new BCryptPasswordEncoder();
-
-        User user = new User();
-        user.setUsername(createUserDTO.getUsername());
-        user.setEmail(createUserDTO.getEmail());
-        user.setName(createUserDTO.getName());
-        user.setPhoneNumber(createUserDTO.getPhoneNumber());
-        user.setRole(Optional.ofNullable(createUserDTO.getRole()).orElse("client"));
-        user.setDateOfCreated(new Date());
-        user.setPassword(bCryptEncoder.encode(createUserDTO.getPassword()));
+        // Проверка email
+        if (userRepository.findByEmail(createUserDTO.getEmail()).isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "email already exists"));
+        }
 
         try {
-            //check if username/email are used or not
-            var otherUser = userRepository.findByEmail(createUserDTO.getEmail());
-            if (otherUser.isPresent()) {
-                return ResponseEntity.badRequest().body("Email is already used");
-            }
+            var bCryptEncoder = new BCryptPasswordEncoder();
+
+            User user = new User();
+            user.setUsername(createUserDTO.getUsername());
+            user.setEmail(createUserDTO.getEmail());
+            user.setName(createUserDTO.getName());
+            user.setPhoneNumber(createUserDTO.getPhoneNumber());
+            user.setRole(Optional.ofNullable(createUserDTO.getRole()).orElse("client"));
+            user.setDateOfCreated(new Date());
+            user.setPassword(bCryptEncoder.encode(createUserDTO.getPassword()));
+            user.setEmailConfirmed(false);
 
             userRepository.save(user);
 
-            String jwtToken = createJwtToken(user);
+            String token = UUID.randomUUID().toString();
+            ConfirmationToken confirmationToken = new ConfirmationToken(
+                    null,
+                    token,
+                    LocalDateTime.now(),
+                    LocalDateTime.now().plusHours(24),
+                    user
+            );
+            confirmationTokenRepository.save(confirmationToken);
 
-            Cookie cookie = new Cookie("Token", jwtToken);
-            cookie.setHttpOnly(false); // Делаем cookie недоступной для JavaScript
-            cookie.setSecure(false); // Включить, если используешь HTTPS
-            cookie.setPath("/"); // Доступно для всех путей приложения
-            cookie.setMaxAge(24 * 60 * 60); // Устанавливаем срок действия (1 день)
+            String confirmUrl = frontendUrl + "/ua/confirm?token=" + token;
+            emailService.sendEmail(
+                    user.getEmail(),
+                    "email_confirmation",
+                    Map.of("link", confirmUrl, "username", user.getUsername())
+            );
 
-            response.addCookie(cookie);
-            return ResponseEntity.ok("Registration successfully done");
+            return ResponseEntity.ok("Confirmation email sent");
         } catch (Exception ex) {
             System.out.println("There is an Exception: ");
             ex.printStackTrace();
@@ -153,6 +172,12 @@ public class UserController {
 
             User user = userRepository.findByEmail(loginDTO.getEmail())
                     .orElseThrow(() -> new RuntimeException("Пользователь с таким email не найден"));
+
+            if (user.getEmailConfirmed() == null || !user.getEmailConfirmed()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Email not confirmed");
+            }
+
             String jwtToken = createJwtToken(user);
 
             Cookie cookie = new Cookie("Token", jwtToken);
@@ -171,10 +196,28 @@ public class UserController {
         return ResponseEntity.badRequest().body("Bad email or password");
     }
 
+    @GetMapping("/confirm")
+    public ResponseEntity<String> confirmEmail(@RequestParam("token") String token) {
+        ConfirmationToken confirmationToken = confirmationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid token"));
+
+        if (confirmationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            return ResponseEntity.badRequest().body("Token expired");
+        }
+
+        User user = confirmationToken.getUser();
+        user.setEmailConfirmed(true);
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Email confirmed successfully");
+    }
+
+    @Transactional
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable("id") Long id) {
+        confirmationTokenRepository.deleteByUserId(id);
         userRepository.deleteById(id);
-        return ResponseEntity.ok("Apartment deleted successfully!");
+        return ResponseEntity.ok("User deleted successfully!");
     }
 
     @GetMapping("/allUsers")

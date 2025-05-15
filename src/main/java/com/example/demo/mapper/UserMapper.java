@@ -13,7 +13,8 @@ public class UserMapper {
                 user.getPhoneNumber(),
                 user.getRole(),
                 user.getName(),
-                user.getPassword()
+                user.getPassword(),
+                String.valueOf(user.getEmailConfirmed())
         );
     }
 
