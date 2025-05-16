@@ -42,6 +42,13 @@ public class UserServiceImpl implements UserService {
         User userToUpdate = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Пользователь с таким id не найден"));
 
+        if (userRepository.existsByEmail(userDTO.getEmail()) && !userDTO.getEmail().equals(userToUpdate.getEmail())) {
+            throw new RuntimeException("Пользователь с таким email уже существует");
+        }
+        if (userRepository.existsByUsername(userDTO.getUsername()) && !userDTO.getUsername().equals(userToUpdate.getUsername())) {
+            throw new RuntimeException("Пользователь с таким username уже существует");
+        }
+
         userToUpdate.setUsername(userDTO.getUsername());
         userToUpdate.setEmail(userDTO.getEmail());
         userToUpdate.setPhoneNumber(userDTO.getPhoneNumber());

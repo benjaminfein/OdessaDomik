@@ -77,7 +77,7 @@ public class UserController {
 
         // Ищем пользователя в базе данных
         var user = userRepository.findByEmail(auth.getName());
-        if (user == null) {
+        if (user.isEmpty()) {
             // Возвращаем ошибку, если пользователь не найден
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Bearer not valid!");
