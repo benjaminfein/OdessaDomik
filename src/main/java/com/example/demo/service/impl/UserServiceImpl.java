@@ -1,27 +1,34 @@
 package com.example.demo.service.impl;
 
-import com.example.demo.dto.user.ChangePasswordDTO;
 import com.example.demo.dto.user.UserDTO;
 import com.example.demo.mapper.UserMapper;
+import com.example.demo.model.PasswordResetToken;
 import com.example.demo.model.User;
+import com.example.demo.repository.PasswordResetTokenRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.UserService;
-import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.mail.MessagingException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailServiceImpl emailServiceImpl;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
-    @Autowired
-    private EmailServiceImpl emailServiceImpl;
+    @Value("${frontend.url}")
+    private String frontendUrl;
 
     @Override
     public List<UserDTO> getAllUsers() {
@@ -59,15 +66,44 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void changePassword(Long userId, ChangePasswordDTO dto) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Пользователь с таким id не найден"));
+    public void sendResetPasswordEmail(String email, String lang) throws MessagingException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Пользователь с таким email не найден"));
 
-        if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
-            throw new RuntimeException("Старый пароль неверный");
+        String token = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = new PasswordResetToken(
+                null,
+                token,
+                LocalDateTime.now(),
+                LocalDateTime.now().plusHours(24),
+                user);
+        passwordResetTokenRepository.save(resetToken);
+
+        String resetLink = frontendUrl + "/" + lang + "/reset-password?token=" + token;
+
+        emailServiceImpl.sendEmail(
+                user.getEmail(),
+                "reset_password",
+                Map.of(
+                        "link", resetLink,
+                        "username", user.getUsername(),
+                        "lang", lang
+                )
+        );
+    }
+
+    @Override
+    public void resetPassword(String token, String newPassword) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Неверный токен"));
+
+        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Токен истек");
         }
 
-        user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+        passwordResetTokenRepository.delete(resetToken);
     }
 }

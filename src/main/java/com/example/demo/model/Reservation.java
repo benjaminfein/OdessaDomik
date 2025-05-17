@@ -41,4 +41,7 @@ public class Reservation {
 
     @Column(name = "client_email")
     private String clientEmail;
+
+    @Column(name = "client_lang")
+    private String clientLang;
 }

@@ -1,7 +1,7 @@
 package com.example.demo.service;
 
-import com.example.demo.dto.user.ChangePasswordDTO;
 import com.example.demo.dto.user.UserDTO;
+import jakarta.mail.MessagingException;
 
 import java.util.List;
 
@@ -12,5 +12,7 @@ public interface UserService {
 
     UserDTO updateUser(Long id, UserDTO userDTO);
 
-    void changePassword(Long userId, ChangePasswordDTO dto);
+    void sendResetPasswordEmail(String email, String lang) throws MessagingException;
+
+    void resetPassword(String token, String newPassword);
 }

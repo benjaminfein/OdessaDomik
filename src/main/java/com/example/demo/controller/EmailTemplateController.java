@@ -19,9 +19,14 @@ public class EmailTemplateController {
         return ResponseEntity.ok(emailTemplateService.createTemplate(template));
     }
 
-    @GetMapping("/get-template-by-key/{templateKey}")
-    public ResponseEntity<EmailTemplate> getTemplateByKey(@PathVariable String templateKey) {
-        return ResponseEntity.ok(emailTemplateService.getTemplateByKey(templateKey));
+    @GetMapping("/get-template-by-key")
+    public ResponseEntity<EmailTemplate> getTemplateByKey(
+            @RequestParam String templateKey,
+            @RequestParam String language
+    ) {
+        return ResponseEntity.ok(
+                emailTemplateService.getTemplateByKeyAndLanguage(templateKey, language)
+        );
     }
 
     @GetMapping("/get-all-templates")

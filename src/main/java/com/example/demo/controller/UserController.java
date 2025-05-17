@@ -1,7 +1,6 @@
 package com.example.demo.controller;
 
 
-import com.example.demo.dto.user.ChangePasswordDTO;
 import com.example.demo.dto.user.CreateUserDTO;
 import com.example.demo.dto.user.LoginDTO;
 import com.example.demo.dto.user.UserDTO;
@@ -12,6 +11,7 @@ import com.example.demo.repository.UserRepository;
 import com.example.demo.service.EmailService;
 import com.example.demo.service.UserService;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -103,7 +103,6 @@ public class UserController {
             return ResponseEntity.badRequest().body(errorsMap);
         }
 
-        // Проверка email
         if (userRepository.findByEmail(createUserDTO.getEmail()).isPresent()) {
             return ResponseEntity.badRequest().body(Map.of("message", "email already exists"));
         }
@@ -123,6 +122,7 @@ public class UserController {
 
             userRepository.save(user);
 
+            String lang = createUserDTO.getLang(); // <— беремо мову
             String token = UUID.randomUUID().toString();
             ConfirmationToken confirmationToken = new ConfirmationToken(
                     null,
@@ -133,16 +133,20 @@ public class UserController {
             );
             confirmationTokenRepository.save(confirmationToken);
 
-            String confirmUrl = frontendUrl + "/ua/confirm?token=" + token;
+            String confirmUrl = frontendUrl + "/" + lang + "/confirm?token=" + token;
+
             emailService.sendEmail(
                     user.getEmail(),
                     "email_confirmation",
-                    Map.of("link", confirmUrl, "username", user.getUsername())
+                    Map.of(
+                            "link", confirmUrl,
+                            "username", user.getUsername(),
+                            "lang", lang // <— передаємо в шаблон
+                    )
             );
 
             return ResponseEntity.ok("Confirmation email sent");
         } catch (Exception ex) {
-            System.out.println("There is an Exception: ");
             ex.printStackTrace();
         }
 
@@ -239,15 +243,18 @@ public class UserController {
         return ResponseEntity.ok(updatedUserDTO);
     }
 
-    @PutMapping("/change-password/{userId}")
-    public ResponseEntity<?> changePassword(@PathVariable Long userId, @RequestBody ChangePasswordDTO changePasswordDTO) {
-        try {
-            userService.changePassword(userId, changePasswordDTO);
-            return ResponseEntity.ok("Пароль успешно изменен");
-        } catch (RuntimeException ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
-        }
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestParam String email, @RequestParam(defaultValue = "ru") String lang) throws MessagingException {
+        userService.sendResetPasswordEmail(email, lang);
+        return ResponseEntity.ok("Если указанный email зарегистрирован, письмо с инструкцией отправлено");
     }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
+        userService.resetPassword(token, newPassword);
+        return ResponseEntity.ok("Пароль успешно изменен");
+    }
+
 
     private String createJwtToken(User user) {
         Instant now = Instant.now();

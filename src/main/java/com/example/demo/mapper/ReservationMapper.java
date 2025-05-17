@@ -19,7 +19,8 @@ public class ReservationMapper {
                 reservation.getGuestCount(),
                 reservation.getStatus(),
                 reservation.getUser().getId(),
-                reservation.getUser().getEmail()
+                reservation.getUser().getEmail(),
+                reservation.getClientLang()
         );
     }
 
@@ -37,7 +38,8 @@ public class ReservationMapper {
                 reservationDTO.getGuestCount(),
                 reservationDTO.getStatus() != null ? reservationDTO.getStatus() : ReservationStatus.PENDING,
                 user,
-                reservationDTO.getClientEmail()
+                reservationDTO.getClientEmail(),
+                reservationDTO.getClientLang()
         );
     }
 }

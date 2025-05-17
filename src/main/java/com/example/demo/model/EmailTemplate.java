@@ -15,8 +15,11 @@ public class EmailTemplate {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "template_key", unique = true, nullable = false)
+    @Column(name = "template_key", nullable = false)
     private String templateKey;
+
+    @Column(name = "language", nullable = false, unique = false)
+    private String language;
 
     @Column(name = "subject", nullable = false)
     private String subject;

@@ -22,4 +22,7 @@ public class CreateUserDTO {
     @NotEmpty
     @Size(min = 6, message = "Minimum password length is 6 characters")
     private String password;
+
+    @NotEmpty
+    private String lang;
 }

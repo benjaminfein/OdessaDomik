@@ -5,11 +5,11 @@ import com.example.demo.model.EmailTemplate;
 import java.util.List;
 
 public interface EmailTemplateService {
-    String getTemplateBody(String templateKey);
+    String getTemplateBody(String templateKey, String language);
 
-    String getTemplateSubject(String templateKey);
+    String getTemplateSubject(String templateKey, String language);
 
-    EmailTemplate getTemplateByKey(String templateKey);
+    EmailTemplate getTemplateByKeyAndLanguage(String templateKey, String language);
 
     List<EmailTemplate> getAllTemplates();
 

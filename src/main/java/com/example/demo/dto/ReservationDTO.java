@@ -19,4 +19,5 @@ public class ReservationDTO {
     private ReservationStatus status;
     private Long userId;
     private String clientEmail;
+    private String clientLang;
 }

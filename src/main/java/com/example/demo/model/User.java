@@ -1,6 +1,8 @@
 package com.example.demo.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,6 +34,8 @@ public class User {
     private Date dateOfCreated;
     @Column(name = "email_confirmed")
     private Boolean emailConfirmed = false;
+    @Column(name = "lang")
+    private String lang;
 
     public User(Long id, String username, String email, String phoneNumber, String role, String name, String password) {
         this.id = id;
@@ -50,5 +54,21 @@ public class User {
         this.role = role;
         this.name = name;
         this.password = password;
+    }
+
+    public User(@NotEmpty String username,
+                @NotEmpty String email,
+                String phoneNumber,
+                String role,
+                @NotEmpty String name,
+                @NotEmpty @Size(min = 6, message = "Minimum password length is 6 characters") String password,
+                @NotEmpty String lang) {
+        this.username = username;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
+        this.role = role;
+        this.name = name;
+        this.password = password;
+        this.lang = lang;
     }
 }

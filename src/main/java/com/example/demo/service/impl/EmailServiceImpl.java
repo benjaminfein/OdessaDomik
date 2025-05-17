@@ -23,8 +23,10 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendEmail(String to, String templateKey, Map<String, String> placeholders) throws MessagingException {
-        String subject = emailTemplateService.getTemplateSubject(templateKey);
-        String body = emailTemplateService.getTemplateBody(templateKey);
+        String lang = placeholders.getOrDefault("lang", "ua");
+
+        String subject = emailTemplateService.getTemplateSubject(templateKey, lang);
+        String body = emailTemplateService.getTemplateBody(templateKey, lang);
 
         if (body != null) {
             for (Map.Entry<String, String> entry : placeholders.entrySet()) {
@@ -49,6 +51,7 @@ public class EmailServiceImpl implements EmailService {
             mailSender.send(message);
         } catch (MessagingException e) {
             logger.error("Ошибка при отправке письма", e);
+            throw e; // не забувай пробросити виняток наверх
         }
     }
 }

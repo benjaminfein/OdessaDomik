@@ -37,7 +37,8 @@ public class UserMapper {
                 user.getPhoneNumber(),
                 user.getRole(),
                 user.getName(),
-                user.getPassword()
+                user.getPassword(),
+                user.getLang()
         );
     }
 
@@ -48,7 +49,8 @@ public class UserMapper {
                 createUserDTO.getPhoneNumber(),
                 createUserDTO.getRole(),
                 createUserDTO.getName(),
-                createUserDTO.getPassword()
+                createUserDTO.getPassword(),
+                createUserDTO.getLang()
         );
     }
 }

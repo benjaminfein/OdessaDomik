@@ -20,23 +20,23 @@ public class EmailTemplateServiceImpl implements EmailTemplateService {
     }
 
     @Override
-    public String getTemplateBody(String templateKey) {
-        Optional<EmailTemplate> template = emailTemplateRepository.findByTemplateKey(templateKey);
+    public String getTemplateBody(String templateKey, String language) {
+        Optional<EmailTemplate> template = emailTemplateRepository.findByTemplateKeyAndLanguage(templateKey, language);
         return template.map(EmailTemplate::getBody)
                 .orElseThrow(() -> new RuntimeException("Шаблон " + templateKey + " не найден"));
     }
 
     @Override
-    public String getTemplateSubject(String templateKey) {
-        Optional<EmailTemplate> template = emailTemplateRepository.findByTemplateKey(templateKey);
+    public String getTemplateSubject(String templateKey, String language) {
+        Optional<EmailTemplate> template = emailTemplateRepository.findByTemplateKeyAndLanguage(templateKey, language);
         return template.map(EmailTemplate::getSubject)
                 .orElseThrow(() -> new RuntimeException("Шаблон " + templateKey + " не найден"));
     }
 
     @Override
-    public EmailTemplate getTemplateByKey(String templateKey) {
-        return emailTemplateRepository.findByTemplateKey(templateKey)
-                .orElseThrow(() -> new RuntimeException("Шаблон не найден"));
+    public EmailTemplate getTemplateByKeyAndLanguage(String templateKey, String language) {
+        return emailTemplateRepository.findByTemplateKeyAndLanguage(templateKey, language)
+                .orElseThrow(() -> new RuntimeException("Шаблон " + templateKey + " с языком " + language + " не найден."));
     }
 
     @Override
