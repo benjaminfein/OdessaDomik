@@ -122,7 +122,7 @@ public class UserController {
 
             userRepository.save(user);
 
-            String lang = createUserDTO.getLang(); // <— беремо мову
+            String lang = createUserDTO.getLang();
             String token = UUID.randomUUID().toString();
             ConfirmationToken confirmationToken = new ConfirmationToken(
                     null,
@@ -185,14 +185,10 @@ public class UserController {
 
             String jwtToken = createJwtToken(user);
 
-            Cookie cookie = new Cookie("Token", jwtToken);
-            cookie.setHttpOnly(false); // Делаем cookie недоступной для JavaScript
-            cookie.setSecure(false); // Включить, если используешь HTTPS
-            cookie.setPath("/"); // Доступно для всех путей приложения
-            cookie.setMaxAge(24 * 60 * 60); // Устанавливаем срок действия (1 день)
-
-            response.addCookie(cookie);
-            return ResponseEntity.ok("Login successfully done");
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("token", jwtToken);
+            responseBody.put("message", "Login successful");
+            return ResponseEntity.ok(responseBody);
         } catch (Exception ex) {
             System.out.println("There is an Exception: ");
             ex.printStackTrace();
@@ -226,7 +222,7 @@ public class UserController {
     }
 
     @GetMapping("/allUsers")
-    public ResponseEntity<List<UserDTO>> getAllApartments() {
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
         List<UserDTO> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
