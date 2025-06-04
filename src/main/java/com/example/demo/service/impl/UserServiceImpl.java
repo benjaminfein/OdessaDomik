@@ -70,13 +70,16 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Пользователь с таким email не найден"));
 
+        passwordResetTokenRepository.deleteByUserId(user.getId());
+
         String token = UUID.randomUUID().toString();
         PasswordResetToken resetToken = new PasswordResetToken(
                 null,
                 token,
                 LocalDateTime.now(),
                 LocalDateTime.now().plusHours(24),
-                user);
+                user
+        );
         passwordResetTokenRepository.save(resetToken);
 
         String resetLink = frontendUrl + "/" + lang + "/reset-password?token=" + token;
