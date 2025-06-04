@@ -4,6 +4,7 @@ import com.example.demo.model.PasswordResetToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,5 +17,5 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
     @Modifying
     @Transactional
     @Query("DELETE FROM PasswordResetToken t WHERE t.user.id = :userId")
-    void deleteByUserId(Long id);
+    void deleteByUserId(@Param("userId") Long id);
 }
