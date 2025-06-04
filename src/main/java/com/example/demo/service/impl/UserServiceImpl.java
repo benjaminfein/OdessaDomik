@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -66,6 +67,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void sendResetPasswordEmail(String email, String lang) throws MessagingException {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Пользователь с таким email не найден"));
