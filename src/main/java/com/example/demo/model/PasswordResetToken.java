@@ -24,5 +24,6 @@ public class PasswordResetToken {
     private LocalDateTime expiresAt;
 
     @OneToOne
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 }

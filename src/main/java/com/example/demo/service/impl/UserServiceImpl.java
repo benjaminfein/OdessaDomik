@@ -72,7 +72,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Пользователь с таким email не найден"));
 
-        passwordResetTokenRepository.deleteByUserId(user.getId());
+        passwordResetTokenRepository.deletePasswordResetTokenByUserIdByUserId(user.getId());
 
         String token = UUID.randomUUID().toString();
         PasswordResetToken resetToken = new PasswordResetToken(
