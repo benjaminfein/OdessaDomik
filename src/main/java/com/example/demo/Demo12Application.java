@@ -7,13 +7,17 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.io.File;
+
 @SpringBootApplication
 @EnableJpaRepositories(basePackages = "com.example.demo.repository")
 @EntityScan(basePackages = "com.example.demo.model")
 @EnableScheduling
 public class Demo12Application {
     public static void main(String[] args) {
-        Dotenv dotenv = Dotenv.load();
+        Dotenv dotenv = Dotenv.configure()
+                .directory(new File(".").getAbsoluteFile().getParent())
+                .load();
         dotenv.entries().forEach(e -> System.setProperty(e.getKey(), e.getValue()));
         SpringApplication.run(Demo12Application.class, args);
     }
