@@ -16,7 +16,8 @@ import java.io.File;
 public class Demo12Application {
     public static void main(String[] args) {
         Dotenv dotenv = Dotenv.configure()
-                .directory(new File(".").getAbsoluteFile().getParent())
+                .directory("/root/OdessaDomik")
+                .filename(".env")
                 .load();
         dotenv.entries().forEach(e -> System.setProperty(e.getKey(), e.getValue()));
         SpringApplication.run(Demo12Application.class, args);
