@@ -19,6 +19,7 @@ public class Demo12Application {
                 .directory("/root/OdessaDomik")
                 .filename(".env")
                 .load();
+        System.out.println("[DEBUG] Dotenv loading from /root/OdessaDomik");
         dotenv.entries().forEach(e -> System.setProperty(e.getKey(), e.getValue()));
         SpringApplication.run(Demo12Application.class, args);
     }
