@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 @SpringBootApplication
 @EnableJpaRepositories(basePackages = "com.example.demo.repository")
@@ -16,11 +18,22 @@ import java.io.File;
 public class Demo12Application {
     public static void main(String[] args) {
         Dotenv dotenv = Dotenv.configure()
-                .directory("/root/OdessaDomik")
+                .directory("/root/OdessaDomik/")
                 .filename(".env")
+                .ignoreIfMissing()
                 .load();
-        System.out.println("[DEBUG] Dotenv loading from /root/OdessaDomik");
+
+        Map<String, Object> envProps = new HashMap<>();
+        dotenv.entries().forEach(entry -> {
+            envProps.put(entry.getKey(), entry.getValue());
+            System.setProperty(entry.getKey(), entry.getValue()); // ← полезно для отладки
+        });
+
+        System.out.println("[DEBUG] Dotenv loading from /");
         dotenv.entries().forEach(e -> System.setProperty(e.getKey(), e.getValue()));
-        SpringApplication.run(Demo12Application.class, args);
+        System.out.println("frontend.url from System: " + System.getProperty("FRONTEND_URL"));
+        SpringApplication app = new SpringApplication(Demo12Application.class);
+        app.setDefaultProperties(envProps);
+        app.run(args);
     }
 }
