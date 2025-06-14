@@ -54,8 +54,6 @@ public class SecurityConfig {
             "/api/user/profile",
             "/api/user/{id}",
             "/api/user/change-password",
-            "/api/s3/upload-multiple",
-            "/api/s3/delete-multiple/**",
             "/api/apartments/create-reservation",
             "/api/apartments/reservation-on-hold/**"
     };
@@ -87,7 +85,9 @@ public class SecurityConfig {
             "/api/apartments/cancel-reservation/**",
             "/api/apartments/confirm-reservation/**",
             "/api/apartments",
-            "/api/apartments/**"
+            "/api/apartments/**",
+            "/api/s3/upload-multiple",
+            "/api/s3/delete-multiple/**"
     };
 
     @Bean
