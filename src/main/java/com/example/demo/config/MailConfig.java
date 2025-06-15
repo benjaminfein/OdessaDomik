@@ -1,13 +1,14 @@
 package com.example.demo.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 import java.util.Properties;
 
+@Slf4j
 @Configuration
 public class MailConfig {
     @Value("${spring.mail.username}")
@@ -20,13 +21,15 @@ public class MailConfig {
     private int emailPort;
 
     @Bean
-    public JavaMailSender getJavaMailSender() {
+    public JavaMailSenderImpl javaMailSenderImpl() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost(emailHost);
-        mailSender.setPort(emailPort);  // порт
+        mailSender.setPort(emailPort);
+        mailSender.setUsername(emailLogin);
+        mailSender.setPassword(emailPassword);
 
-        mailSender.setUsername(emailLogin);  // твой email
-        mailSender.setPassword(emailPassword);  // пароль
+        log.info("[MailConfig] Email login: {}", emailLogin);
+        log.info("[MailConfig] Email password is {}", emailPassword != null ? "present" : "null");
 
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");

@@ -9,6 +9,7 @@ import com.example.demo.repository.UserRepository;
 import com.example.demo.service.UserService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -68,7 +70,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void sendResetPasswordEmail(String email, String lang) throws MessagingException {
+    public void sendResetPasswordEmail(String email, String lang) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Пользователь с таким email не найден"));
 
@@ -86,15 +88,21 @@ public class UserServiceImpl implements UserService {
 
         String resetLink = frontendUrl + "/" + lang + "/reset-password?token=" + token;
 
-        emailServiceImpl.sendEmail(
-                user.getEmail(),
-                "reset_password",
-                Map.of(
-                        "link", resetLink,
-                        "username", user.getUsername(),
-                        "lang", lang
-                )
-        );
+        try {
+            emailServiceImpl.sendEmail(
+                    user.getEmail(),
+                    "reset_password",
+                    Map.of(
+                            "link", resetLink,
+                            "username", user.getUsername(),
+                            "lang", lang
+                    )
+            );
+            log.info("[UserServiceImpl] Reset email sent to {}", user.getEmail());
+        } catch (MessagingException e) {
+            log.error("[UserServiceImpl] Failed to send reset email to {}", user.getEmail(), e);
+            throw new RuntimeException("Не удалось отправить письмо для сброса пароля");
+        }
     }
 
     @Override

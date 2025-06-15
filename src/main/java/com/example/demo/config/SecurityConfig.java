@@ -98,8 +98,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(ADMIN_ENDPOINTS).hasAuthority("admin")
-                        .requestMatchers(PROTECTED_ENDPOINTS).authenticated()
+                        .requestMatchers(ADMIN_ENDPOINTS).permitAll()
+                        .requestMatchers(PROTECTED_ENDPOINTS).hasAuthority("client")
                         .anyRequest().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
@@ -115,7 +115,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(PUBLIC_ENDPOINTS).permitAll();
-                    auth.requestMatchers(PROTECTED_ENDPOINTS).authenticated();
+                    auth.requestMatchers(PROTECTED_ENDPOINTS).hasAuthority("client");
 
                     if (restrictAdminEndpoints) {
                         auth.requestMatchers(ADMIN_ENDPOINTS).hasAuthority("admin");

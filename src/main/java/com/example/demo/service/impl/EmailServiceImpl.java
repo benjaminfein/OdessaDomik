@@ -49,9 +49,10 @@ public class EmailServiceImpl implements EmailService {
             helper.setText(body, true);
 
             mailSender.send(message);
+            logger.info("[EmailServiceImpl] Email sent to {}", to);
         } catch (MessagingException e) {
-            logger.error("Ошибка при отправке письма", e);
-            throw e; // не забувай пробросити виняток наверх
+            logger.error("[LOG][EmailServiceImpl]Ошибка при отправке письма", e);
+            throw e;
         }
     }
 }

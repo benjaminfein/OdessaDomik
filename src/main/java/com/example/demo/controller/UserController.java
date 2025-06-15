@@ -73,7 +73,6 @@ public class UserController {
     public ResponseEntity<Object> profile(Authentication auth) {
         var response = new HashMap<String, Object>();
         response.put("Email", auth.getName());
-        response.put("Authorities", auth.getAuthorities());
 
         // Ищем пользователя в базе данных
         var user = userRepository.findByEmail(auth.getName());
