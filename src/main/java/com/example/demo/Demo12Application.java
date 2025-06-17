@@ -29,7 +29,7 @@ public class Demo12Application {
             System.setProperty(entry.getKey(), entry.getValue()); // ← полезно для отладки
         });
 
-        System.out.println("[DEBUG] Dotenv loading from /");
+        System.out.println("[DEBUG] EMAIL_PASSWORD = " + dotenv.get("EMAIL_PASSWORD"));
         dotenv.entries().forEach(e -> System.setProperty(e.getKey(), e.getValue()));
         System.out.println("frontend.url from System: " + System.getProperty("frontend.url"));
         SpringApplication app = new SpringApplication(Demo12Application.class);
