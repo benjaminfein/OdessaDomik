@@ -49,7 +49,7 @@ public class EmailServiceImpl implements EmailService {
             helper.setText(body, true);
 
             mailSender.send(message);
-            logger.info("[EmailServiceImpl] Email sent to {}", to);
+            logger.info("[LOG][EmailServiceImpl] Email sent to {}", to);
         } catch (MessagingException e) {
             logger.error("[LOG][EmailServiceImpl]Ошибка при отправке письма", e);
             throw e;

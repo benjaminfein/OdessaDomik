@@ -31,7 +31,7 @@ public class Demo12Application {
 
         System.out.println("[DEBUG] Dotenv loading from /");
         dotenv.entries().forEach(e -> System.setProperty(e.getKey(), e.getValue()));
-        System.out.println("frontend.url from System: " + System.getProperty("FRONTEND_URL"));
+        System.out.println("frontend.url from System: " + System.getProperty("frontend.url"));
         SpringApplication app = new SpringApplication(Demo12Application.class);
         app.setDefaultProperties(envProps);
         app.run(args);

@@ -29,7 +29,8 @@ public class MailConfig {
         mailSender.setPassword(emailPassword);
 
         log.info("[MailConfig] Email login: {}", emailLogin);
-        log.info("[MailConfig] Email password is {}", emailPassword != null ? "present" : "null");
+        log.info("[MailConfig] Email password is {}", emailPassword);
+//        log.info("[MailConfig] Email password is {}", emailPassword != null ? "present" : "null");
 
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
