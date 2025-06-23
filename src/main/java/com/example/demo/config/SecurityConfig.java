@@ -51,7 +51,6 @@ public class SecurityConfig {
     }
 
     private static final String[] PROTECTED_ENDPOINTS = {
-            "/api/user/profile",
             "/api/user/{id}",
             "/api/user/change-password",
             "/api/apartments/create-reservation",
@@ -67,7 +66,8 @@ public class SecurityConfig {
             "/api/user/forgot-password",
             "/api/user/reset-password",
             "/api/s3/list/**",
-            "/api/user/confirm"
+            "/api/user/confirm",
+            "/api/user/profile"
     };
 
     private static final String[] ADMIN_ENDPOINTS = {
