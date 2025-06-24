@@ -30,7 +30,7 @@ public class UserServiceImpl implements UserService {
     private final EmailServiceImpl emailServiceImpl;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
 
-    @Value("${frontend.url}")
+    @Value("${frontend_url}")
     private String frontendUrl;
 
     @Override

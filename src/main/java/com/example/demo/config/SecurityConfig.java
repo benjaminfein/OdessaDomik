@@ -37,7 +37,7 @@ public class SecurityConfig {
     @Value("${security.jwt.secret-key}")
     private String jwtSecretKey;
 
-    @Value("${frontend.url}")
+    @Value("${frontend_url}")
     private String frontendUrl;
 
     @Value("${security.restrict-admin-endpoints:true}")

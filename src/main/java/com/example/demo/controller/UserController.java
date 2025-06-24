@@ -49,7 +49,7 @@ public class UserController {
     @Value("${security.jwt.issuer}")
     private String jwtIssuer;
 
-    @Value("${frontend.url}")
+    @Value("${frontend_url}")
     private String frontendUrl;
 
     private final UserRepository userRepository;
