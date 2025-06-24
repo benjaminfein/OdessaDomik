@@ -15,10 +15,12 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -54,7 +56,8 @@ public class SecurityConfig {
             "/api/user/{id}",
             "/api/user/change-password",
             "/api/apartments/create-reservation",
-            "/api/apartments/reservation-on-hold/**"
+            "/api/apartments/reservation-on-hold/**",
+            "/api/user/profile"
     };
 
     private static final String[] PUBLIC_ENDPOINTS = {
@@ -66,8 +69,7 @@ public class SecurityConfig {
             "/api/user/forgot-password",
             "/api/user/reset-password",
             "/api/s3/list/**",
-            "/api/user/confirm",
-            "/api/user/profile"
+            "/api/user/confirm"
     };
 
     private static final String[] ADMIN_ENDPOINTS = {
@@ -99,10 +101,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(ADMIN_ENDPOINTS).permitAll()
-                        .requestMatchers(PROTECTED_ENDPOINTS).hasAuthority("client")
+                        .requestMatchers(PROTECTED_ENDPOINTS).hasAnyAuthority("client", "admin")
                         .anyRequest().permitAll()
                 )
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
+                        )
+                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
     }
@@ -115,7 +121,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(PUBLIC_ENDPOINTS).permitAll();
-                    auth.requestMatchers(PROTECTED_ENDPOINTS).hasAuthority("client");
+                    auth.requestMatchers(PROTECTED_ENDPOINTS).hasAnyAuthority("client", "admin");
 
                     if (restrictAdminEndpoints) {
                         auth.requestMatchers(ADMIN_ENDPOINTS).hasAuthority("admin");
@@ -125,7 +131,11 @@ public class SecurityConfig {
 
                     auth.anyRequest().permitAll();
                 })
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
+                        )
+                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
     }
@@ -162,5 +172,25 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
+    }
+
+    private JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+
+        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            String role = jwt.getClaim("role");
+            System.out.println("[SecurityConfig][JWT CONVERTER] Extracted role: " + role); // лог!
+
+            if (role != null) {
+                var authority = new SimpleGrantedAuthority(role);
+                System.out.println("[SecurityConfig][JWT CONVERTER] Granted authority: " + authority); // лог!
+                return List.of(authority);
+            }
+
+            System.out.println("[SecurityConfig][JWT CONVERTER] No role found in JWT");
+            return List.of();
+        });
+
+        return converter;
     }
 }

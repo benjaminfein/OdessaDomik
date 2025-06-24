@@ -262,6 +262,8 @@ public class UserController {
                 .claim("role", user.getRole())
                 .build();
 
+        System.out.println("[UserController] Role in JWT: " + user.getRole());
+
         var params = JwtEncoderParameters.from(
                 JwsHeader.with(MacAlgorithm.HS256).build(), claims);
         try {
