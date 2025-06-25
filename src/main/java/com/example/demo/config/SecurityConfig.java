@@ -98,12 +98,19 @@ public class SecurityConfig {
         return http
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(ADMIN_ENDPOINTS).permitAll()
-                        .requestMatchers(PROTECTED_ENDPOINTS).hasAnyAuthority("client", "admin")
-                        .anyRequest().permitAll()
-                )
+                .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(PUBLIC_ENDPOINTS).permitAll();
+                    auth.requestMatchers(PROTECTED_ENDPOINTS).hasAnyAuthority("client", "admin");
+
+                    if (restrictAdminEndpoints) {
+                        auth.requestMatchers(ADMIN_ENDPOINTS).hasAuthority("admin");
+                    } else {
+                        auth.requestMatchers(ADMIN_ENDPOINTS).permitAll();
+                    }
+
+                    auth.anyRequest().permitAll();
+                })
+                .anonymous(Customizer.withDefaults())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter())
