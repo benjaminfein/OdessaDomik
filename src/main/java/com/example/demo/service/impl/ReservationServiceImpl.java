@@ -70,7 +70,7 @@ public class ReservationServiceImpl implements ReservationService {
     @Transactional
     public void pendingReservation(Long reservationId) throws MessagingException {
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("Резервирование с id " + reservationId + " не найдено"));
+                .orElseThrow(() -> new RuntimeException("Reservation not found with id: " + reservationId));
 
         reservation.setStatus(ReservationStatus.PENDING);
         reservationRepository.save(reservation);
@@ -82,13 +82,11 @@ public class ReservationServiceImpl implements ReservationService {
     @Transactional
     public void cancelReservation(Long reservationId) throws MessagingException {
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("Резервирование с id " + reservationId + " не найдено"));
+                .orElseThrow(() -> new RuntimeException("Reservation not found with id: " + reservationId));
 
-        // Подтверждаем бронь
         reservation.setStatus(ReservationStatus.CANCELED);
         reservationRepository.save(reservation);
 
-        // Отправляем письма
         sendCancelingReservationEmails(reservation);
     }
 
@@ -96,13 +94,11 @@ public class ReservationServiceImpl implements ReservationService {
     @Transactional
     public void confirmReservation(Long reservationId) throws MessagingException {
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("Резервирование с id " + reservationId + " не найдено"));
+                .orElseThrow(() -> new RuntimeException("Reservation not found with id: " + reservationId));
 
-        // Подтверждаем бронь
         reservation.setStatus(ReservationStatus.CONFIRMED);
         reservationRepository.save(reservation);
 
-        // Отправляем письма
         sendConfirmingReservationEmail(reservation);
     }
 
@@ -123,7 +119,7 @@ public class ReservationServiceImpl implements ReservationService {
         clientPlaceholders.put("reservation.checkInDate", reservation.getCheckInDate().toString());
         clientPlaceholders.put("reservation.checkOutDate", reservation.getCheckOutDate().toString());
         clientPlaceholders.put("reservation.guestCount", String.valueOf(reservation.getGuestCount()));
-        clientPlaceholders.put("lang", reservation.getClientLang()); // 🔽
+        clientPlaceholders.put("lang", reservation.getClientLang());
 
         emailService.sendEmail(clientEmail, "reservation_pending", clientPlaceholders);
 
@@ -139,7 +135,7 @@ public class ReservationServiceImpl implements ReservationService {
         managerPlaceholders.put("user.email", reservation.getUser().getEmail());
         managerPlaceholders.put("user.phoneNumber", reservation.getUser().getPhoneNumber());
         managerPlaceholders.put("user.username", reservation.getUser().getUsername());
-        managerPlaceholders.put("lang", reservation.getClientLang()); // 🔽
+        managerPlaceholders.put("lang", reservation.getClientLang());
 
         for (String managerEmail : managerEmails) {
             emailService.sendEmail(managerEmail, "reservation_pending_admin", managerPlaceholders);
@@ -150,7 +146,7 @@ public class ReservationServiceImpl implements ReservationService {
         String clientEmail = reservation.getClientEmail();
         List<String> managerEmails = userRepository.findByRole("admin").stream()
                 .map(User::getEmail)
-                .toList(); // Список email администраторов
+                .toList();
 
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("user.name", reservation.getUser().getName());
@@ -183,12 +179,10 @@ public class ReservationServiceImpl implements ReservationService {
         placeholders.put("reservation.guestCount", String.valueOf(reservation.getGuestCount()));
         placeholders.put("lang", reservation.getClientLang());
 
-        // Отправка email клиенту
         emailService.sendEmail(clientEmail, "reservation_confirmed", placeholders);
 
-        // Отправка email менеджерам
         for (String managerEmail : managerEmails) {
-            emailService.sendEmail(managerEmail, "reservation_confirmed_admin", placeholders);  // новый шаблон для админов
+            emailService.sendEmail(managerEmail, "reservation_confirmed_admin", placeholders);
         }
     }
 }

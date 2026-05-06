@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class ApartmentServiceImpl implements ApartmentService {
     private ApartmentRepository apartmentRepository;
-    private UserRepository userRepository;
     private ReservationService reservationService;
 
     @Override
@@ -50,19 +49,12 @@ public class ApartmentServiceImpl implements ApartmentService {
         Apartment apartment = apartmentRepository.findById(id).orElseThrow(
                 () -> new ApartmentNotFoundException("Apartment is not exist with given id: " + id)
         );
-        apartment.setName(apartmentToUpdate.getName());
-        apartment.setShortDescription(apartmentToUpdate.getShortDescription());
-        apartment.setDescription(apartmentToUpdate.getDescription());
-        apartment.setAddress(apartmentToUpdate.getAddress());
-        apartment.setPrice(apartmentToUpdate.getPrice());
-        apartment.setHasParkingLot(apartmentToUpdate.getHasParkingLot());
-        apartment.setHasWiFi(apartmentToUpdate.getHasWiFi());
-        apartment.setFloorNumber(apartmentToUpdate.getFloorNumber());
-        apartment.setAreaOfApartment(apartmentToUpdate.getAreaOfApartment());
-        apartment.setHasSeaView(apartmentToUpdate.getHasSeaView());
-        apartment.setCountOfSleepPlaces(apartmentToUpdate.getCountOfSleepPlaces());
-        Apartment updatedApartment = apartmentRepository.save(apartment);
-        return ApartmentMapper.mapToApartmentDTO(updatedApartment);
+        Apartment apartmentToSave = ApartmentMapper.mapToApartment(apartmentToUpdate);
+        apartmentToSave.setId(id);
+        if (!apartment.equals(apartmentToSave)) {
+            apartmentRepository.save(apartmentToSave);
+        }
+        return ApartmentMapper.mapToApartmentDTO(apartmentToSave);
     }
 
     @Override
@@ -78,15 +70,14 @@ public class ApartmentServiceImpl implements ApartmentService {
         List<Apartment> availableApartments;
 
         if (startDate == null || endDate == null) {
-            // Если даты не переданы, ищем просто по количеству гостей
             availableApartments = apartmentRepository.findByCountOfSleepPlacesGreaterThanEqual(guestCount);
         } else {
-            // Если даты переданы, фильтруем забронированные квартиры
             List<Long> bookedApartmentIds = reservationService.findBookedApartmentIds(startDate, endDate);
 
             availableApartments = bookedApartmentIds.isEmpty()
                     ? apartmentRepository.findByCountOfSleepPlacesGreaterThanEqual(guestCount)
-                    : apartmentRepository.findByIdNotInAndCountOfSleepPlacesGreaterThanEqual(bookedApartmentIds, guestCount);
+                    : apartmentRepository
+                    .findByIdNotInAndCountOfSleepPlacesGreaterThanEqual(bookedApartmentIds, guestCount);
         }
 
         return availableApartments.stream().map(ApartmentMapper::mapToApartmentDTO).toList();

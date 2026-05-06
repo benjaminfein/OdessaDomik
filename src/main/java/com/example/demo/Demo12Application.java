@@ -1,6 +1,7 @@
 package com.example.demo;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -11,6 +12,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @SpringBootApplication
 @EnableJpaRepositories(basePackages = "com.example.demo.repository")
 @EntityScan(basePackages = "com.example.demo.model")
@@ -18,7 +20,7 @@ import java.util.Map;
 public class Demo12Application {
     public static void main(String[] args) {
         Dotenv dotenv = Dotenv.configure()
-                .directory("/root/OdessaDomik/")
+//                .directory("/root/OdessaDomik/")
                 .filename(".env")
                 .ignoreIfMissing()
                 .load();
@@ -30,7 +32,7 @@ public class Demo12Application {
         });
 
         dotenv.entries().forEach(e -> System.setProperty(e.getKey(), e.getValue()));
-        System.out.println("frontend_url from System: " + System.getProperty("frontend_url"));
+        log.debug("[Demo12Application] frontend_url = {}", System.getProperty("frontend_url"));
         SpringApplication app = new SpringApplication(Demo12Application.class);
         app.setDefaultProperties(envProps);
         app.run(args);

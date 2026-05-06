@@ -21,9 +21,9 @@ public class S3Controller {
             @RequestParam("apartmentId") Long apartmentId) {
         try {
             s3Service.uploadFiles(files, apartmentId);
-            return ResponseEntity.ok("Файлы успешно загружены и привязаны к квартире.");
+            return ResponseEntity.ok("Files uploaded and attached to apartment with id \"" + apartmentId + "\" successfully.");
         } catch (IOException e) {
-            return ResponseEntity.status(500).body("Ошибка при загрузке файлов: " + e.getMessage());
+            return ResponseEntity.status(500).body("Error while file uploading: " + e.getMessage());
         }
     }
 
@@ -36,6 +36,6 @@ public class S3Controller {
     public ResponseEntity<String> deleteFiles(@PathVariable Long apartmentId,
                                               @RequestParam("fileNames") List<String> fileNames) {
         s3Service.deleteFiles(apartmentId, fileNames);
-        return ResponseEntity.ok("Файлы удалены.");
+        return ResponseEntity.ok("Files deleted successfully.");
     }
 }

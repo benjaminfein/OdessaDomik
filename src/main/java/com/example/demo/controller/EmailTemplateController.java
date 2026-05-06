@@ -42,6 +42,6 @@ public class EmailTemplateController {
     @DeleteMapping("/delete-template/{id}")
     public ResponseEntity<String> deleteTemplate(@PathVariable Long id) {
         emailTemplateService.deleteTemplate(id);
-        return ResponseEntity.ok("Reservation deleted successfully!");
+        return ResponseEntity.ok("Template deleted successfully!");
     }
 }

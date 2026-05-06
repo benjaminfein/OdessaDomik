@@ -12,7 +12,6 @@ import com.example.demo.service.EmailService;
 import com.example.demo.service.UserService;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import jakarta.mail.MessagingException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -74,15 +73,12 @@ public class UserController {
         var response = new HashMap<String, Object>();
         response.put("Email", auth.getName());
 
-        // Ищем пользователя в базе данных
         var user = userRepository.findByEmail(auth.getName());
         if (user.isEmpty()) {
-            // Возвращаем ошибку, если пользователь не найден
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Bearer not valid!");
         }
 
-        // Если пользователь найден, добавляем его в ответ
         response.put("User", user);
 
         return ResponseEntity.ok(response);
@@ -140,13 +136,13 @@ public class UserController {
                     Map.of(
                             "link", confirmUrl,
                             "username", user.getUsername(),
-                            "lang", lang // <— передаємо в шаблон
+                            "lang", lang
                     )
             );
 
             return ResponseEntity.ok("Confirmation email sent");
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error("[UserController] Registration failed for email {}", createUserDTO.getEmail(), ex);
         }
 
         return ResponseEntity.badRequest().body("Error");
@@ -175,7 +171,7 @@ public class UserController {
             );
 
             User user = userRepository.findByEmail(loginDTO.getEmail())
-                    .orElseThrow(() -> new RuntimeException("Пользователь с таким email не найден"));
+                    .orElseThrow(() -> new RuntimeException("User not found with given email"));
 
             if (user.getEmailConfirmed() == null || !user.getEmailConfirmed()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -189,8 +185,7 @@ public class UserController {
             responseBody.put("message", "Login successful");
             return ResponseEntity.ok(responseBody);
         } catch (Exception ex) {
-            System.out.println("There is an Exception: ");
-            ex.printStackTrace();
+            log.error("[UserController] Login failed for email {}", loginDTO.getEmail(), ex);
         }
 
         return ResponseEntity.badRequest().body("Bad email or password");
@@ -241,13 +236,13 @@ public class UserController {
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestParam String email, @RequestParam(defaultValue = "ru") String lang) throws MessagingException {
         userService.sendResetPasswordEmail(email, lang);
-        return ResponseEntity.ok("Если указанный email зарегистрирован, письмо с инструкцией отправлено");
+        return ResponseEntity.ok("If user was registered, the instruction letter was sent.");
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
         userService.resetPassword(token, newPassword);
-        return ResponseEntity.ok("Пароль успешно изменен");
+        return ResponseEntity.ok("Password successfully changed.");
     }
 
 
@@ -262,7 +257,7 @@ public class UserController {
                 .claim("role", user.getRole())
                 .build();
 
-        System.out.println("[UserController] Role in JWT: " + user.getRole());
+        log.debug("[UserController] Role in JWT: {}", user.getRole());
 
         var params = JwtEncoderParameters.from(
                 JwsHeader.with(MacAlgorithm.HS256).build(), claims);

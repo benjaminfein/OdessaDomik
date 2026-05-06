@@ -56,7 +56,7 @@ public class ApartmentController {
         return ResponseEntity.ok("Apartment deleted successfully!");
     }
 
-    //Working with reservation
+    // Reservation endpoints
 
     @GetMapping("/available")
     public ResponseEntity<List<ApartmentDTO>> getAvailableApartments(
@@ -78,7 +78,6 @@ public class ApartmentController {
         return ResponseEntity.ok(availableApartments);
     }
 
-    //Endpoints for Reservations(rn its for test)
     @PostMapping("/create-reservation")
     public ResponseEntity<ReservationDTO> createReservation(@RequestBody ReservationDTO reservationDTO) {
         ReservationDTO savedReservation = reservationService.createReservation(reservationDTO);
@@ -100,7 +99,7 @@ public class ApartmentController {
     @DeleteMapping("/delete-pending")
     public ResponseEntity<String> deletePendingReservations() {
         reservationService.deletePendingReservations();
-        return ResponseEntity.ok("Все неподтвержденные брони удалены.");
+        return ResponseEntity.ok("All pending reservations deleted.");
     }
 
     @PutMapping("/reservation-on-hold/{id}")

@@ -23,20 +23,20 @@ public class EmailTemplateServiceImpl implements EmailTemplateService {
     public String getTemplateBody(String templateKey, String language) {
         Optional<EmailTemplate> template = emailTemplateRepository.findByTemplateKeyAndLanguage(templateKey, language);
         return template.map(EmailTemplate::getBody)
-                .orElseThrow(() -> new RuntimeException("Шаблон " + templateKey + " не найден"));
+                .orElseThrow(() -> new RuntimeException("Template not found: " + templateKey));
     }
 
     @Override
     public String getTemplateSubject(String templateKey, String language) {
         Optional<EmailTemplate> template = emailTemplateRepository.findByTemplateKeyAndLanguage(templateKey, language);
         return template.map(EmailTemplate::getSubject)
-                .orElseThrow(() -> new RuntimeException("Шаблон " + templateKey + " не найден"));
+                .orElseThrow(() -> new RuntimeException("Template not found: " + templateKey));
     }
 
     @Override
     public EmailTemplate getTemplateByKeyAndLanguage(String templateKey, String language) {
         return emailTemplateRepository.findByTemplateKeyAndLanguage(templateKey, language)
-                .orElseThrow(() -> new RuntimeException("Шаблон " + templateKey + " с языком " + language + " не найден."));
+                .orElseThrow(() -> new RuntimeException("Template not found: " + templateKey + " [" + language + "]"));
     }
 
     @Override
@@ -47,7 +47,7 @@ public class EmailTemplateServiceImpl implements EmailTemplateService {
     @Override
     public EmailTemplate updateTemplate(Long id, EmailTemplate updatedTemplate) {
         EmailTemplate existingTemplate = emailTemplateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Шаблон не найден"));
+                .orElseThrow(() -> new RuntimeException("Template not found with id: " + id));
 
         existingTemplate.setTemplateKey(updatedTemplate.getTemplateKey());
         existingTemplate.setSubject(updatedTemplate.getSubject());

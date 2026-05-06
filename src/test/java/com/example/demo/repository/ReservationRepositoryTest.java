@@ -1,0 +1,121 @@
+package com.example.demo.repository;
+
+import com.example.demo.enums.ReservationStatus;
+import com.example.demo.model.Apartment;
+import com.example.demo.model.Reservation;
+import com.example.demo.model.User;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@DataJpaTest
+class ReservationRepositoryTest {
+
+    @Autowired private ReservationRepository reservationRepository;
+    @Autowired private ApartmentRepository apartmentRepository;
+    @Autowired private UserRepository userRepository;
+
+    private Apartment apartment;
+    private User user;
+
+    // Existing reservation: 2025-07-10 to 2025-07-20
+    private static final LocalDate EXISTING_START = LocalDate.of(2025, 7, 10);
+    private static final LocalDate EXISTING_END   = LocalDate.of(2025, 7, 20);
+
+    @BeforeEach
+    void setUp() {
+        User u = new User();
+        u.setUsername("john");
+        u.setEmail("john@test.com");
+        u.setRole("client");
+        u.setName("John");
+        u.setPassword("pwd");
+        u.setEmailConfirmed(true);
+        u.setDateOfCreated(new Date());
+        user = userRepository.save(u);
+
+        apartment = apartmentRepository.save(new Apartment(null, "Apt", "Short", "Desc",
+                "addr", 1000, false, false, 1, 50, false, 2, new ArrayList<>()));
+
+        reservationRepository.save(new Reservation(null, apartment, EXISTING_START, EXISTING_END,
+                2L, ReservationStatus.CONFIRMED, user, "john@test.com", "ua"));
+    }
+
+    // --- findBookedApartmentIds ---
+
+    @Test
+    void findBookedApartmentIds_ShouldReturnId_WhenCheckInOverlaps() {
+        // checkIn falls inside existing reservation
+        List<Long> result = reservationRepository.findBookedApartmentIds(
+                LocalDate.of(2025, 7, 15), LocalDate.of(2025, 7, 25));
+
+        assertEquals(1, result.size());
+        assertEquals(apartment.getId(), result.get(0));
+    }
+
+    @Test
+    void findBookedApartmentIds_ShouldReturnId_WhenCheckOutOverlaps() {
+        // checkOut falls inside existing reservation
+        List<Long> result = reservationRepository.findBookedApartmentIds(
+                LocalDate.of(2025, 7, 5), LocalDate.of(2025, 7, 15));
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void findBookedApartmentIds_ShouldReturnId_WhenNewRangeEncompassesExisting() {
+        // New range fully contains the existing reservation
+        List<Long> result = reservationRepository.findBookedApartmentIds(
+                LocalDate.of(2025, 7, 1), LocalDate.of(2025, 7, 31));
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void findBookedApartmentIds_ShouldReturnEmpty_WhenNoOverlap() {
+        // Completely before existing reservation
+        List<Long> result = reservationRepository.findBookedApartmentIds(
+                LocalDate.of(2025, 6, 1), LocalDate.of(2025, 7, 5));
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void findBookedApartmentIds_ShouldReturnEmpty_WhenAfterExisting() {
+        // Completely after existing reservation
+        List<Long> result = reservationRepository.findBookedApartmentIds(
+                LocalDate.of(2025, 7, 25), LocalDate.of(2025, 8, 5));
+
+        assertTrue(result.isEmpty());
+    }
+
+    // --- deleteByStatus ---
+
+    @Test
+    void deleteByStatus_ShouldDeleteOnlyMatchingReservations() {
+        reservationRepository.save(new Reservation(null, apartment,
+                LocalDate.of(2025, 8, 1), LocalDate.of(2025, 8, 5),
+                2L, ReservationStatus.PENDING, user, "john@test.com", "ua"));
+
+        reservationRepository.deleteByStatus(ReservationStatus.PENDING);
+
+        List<Reservation> remaining = reservationRepository.findAll();
+        assertEquals(1, remaining.size());
+        assertEquals(ReservationStatus.CONFIRMED, remaining.get(0).getStatus());
+    }
+
+    @Test
+    void deleteByStatus_ShouldDoNothing_WhenNoMatchingStatus() {
+        reservationRepository.deleteByStatus(ReservationStatus.CANCELED);
+
+        assertEquals(1, reservationRepository.count());
+    }
+}

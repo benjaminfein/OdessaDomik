@@ -24,11 +24,14 @@ public class ReservationMapper {
         );
     }
 
-    public static Reservation mapToReservation(ReservationDTO reservationDTO, ApartmentRepository apartmentRepository, UserRepository userRepository) {
+    public static Reservation mapToReservation(ReservationDTO reservationDTO, ApartmentRepository apartmentRepository,
+                                               UserRepository userRepository) {
         Apartment apartment = apartmentRepository.findById(reservationDTO.getApartmentId())
-                .orElseThrow(() -> new RuntimeException("Квартира с id " + reservationDTO.getApartmentId() + " не найдена"));
+                .orElseThrow(() -> new RuntimeException("There is no apartment with following id: "
+                        + reservationDTO.getApartmentId()));
         User user = userRepository.findByEmail(reservationDTO.getClientEmail())
-                .orElseThrow(() -> new RuntimeException("Пользователь с email " + reservationDTO.getClientEmail() + " не найден"));
+                .orElseThrow(() -> new RuntimeException("There is no user with following id: "
+                        + reservationDTO.getClientEmail()));
 
         return new Reservation(
                 reservationDTO.getId(),

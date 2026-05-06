@@ -7,7 +7,6 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -51,7 +50,7 @@ public class EmailServiceImpl implements EmailService {
             mailSender.send(message);
             logger.info("[LOG][EmailServiceImpl] Email sent to {}", to);
         } catch (MessagingException e) {
-            logger.error("[LOG][EmailServiceImpl]Ошибка при отправке письма", e);
+            logger.error("[EmailServiceImpl] Failed to send email to {}", to, e);
             throw e;
         }
     }

@@ -2,6 +2,7 @@ package com.example.demo.config;
 
 import com.example.demo.service.CustomUserDetailsService;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -29,6 +30,7 @@ import org.springframework.web.filter.CorsFilter;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.List;
 
+@Slf4j
 @Configuration
 @EnableWebSecurity
 @ComponentScan(basePackages = "com.example.demo.service")
@@ -48,8 +50,8 @@ public class SecurityConfig {
 
     @PostConstruct
     public void debugProfile() {
-        System.out.println("🌍 PROFILE: test.value = " + testValue);
-        System.out.println("🔐 restrictAdminEndpoints = " + restrictAdminEndpoints);
+        log.info("[SecurityConfig] PROFILE: test.value = {}", testValue);
+        log.info("[SecurityConfig] restrictAdminEndpoints = {}", restrictAdminEndpoints);
     }
 
     private static final String[] PROTECTED_ENDPOINTS = {
@@ -69,7 +71,8 @@ public class SecurityConfig {
             "/api/user/forgot-password",
             "/api/user/reset-password",
             "/api/s3/list/**",
-            "/api/user/confirm"
+            "/api/user/confirm",
+            "/actuator/health"
     };
 
     private static final String[] ADMIN_ENDPOINTS = {
@@ -116,7 +119,8 @@ public class SecurityConfig {
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter())
                         )
                 )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
     }
 
@@ -143,7 +147,8 @@ public class SecurityConfig {
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter())
                         )
                 )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
     }
 
@@ -186,15 +191,15 @@ public class SecurityConfig {
 
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
             String role = jwt.getClaim("role");
-            System.out.println("[SecurityConfig][JWT CONVERTER] Extracted role: " + role); // лог!
+            log.debug("[SecurityConfig] JWT converter extracted role: {}", role);
 
             if (role != null) {
                 var authority = new SimpleGrantedAuthority(role);
-                System.out.println("[SecurityConfig][JWT CONVERTER] Granted authority: " + authority); // лог!
+                log.debug("[SecurityConfig] Granted authority: {}", authority);
                 return List.of(authority);
             }
 
-            System.out.println("[SecurityConfig][JWT CONVERTER] No role found in JWT");
+            log.debug("[SecurityConfig] No role found in JWT");
             return List.of();
         });
 
