@@ -1,5 +1,6 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.exception.ApartmentNotFoundException;
 import com.example.demo.model.Apartment;
 import com.example.demo.repository.ApartmentRepository;
 import com.example.demo.service.S3Service;
@@ -39,7 +40,7 @@ public class S3ServiceImpl implements S3Service {
         Apartment apartment = apartmentRepository.findById(apartmentId)
                 .orElseThrow(() -> {
                     log.error("[S3ServiceImpl] Apartment id={} not found during file upload", apartmentId);
-                    return new RuntimeException("Apartment not found");
+                    return new ApartmentNotFoundException("Apartment not found");
                 });
 
         for (MultipartFile file : files) {
@@ -69,7 +70,7 @@ public class S3ServiceImpl implements S3Service {
         Apartment apartment = apartmentRepository.findById(apartmentId)
                 .orElseThrow(() -> {
                     log.error("[S3ServiceImpl] Apartment id={} not found during file deletion", apartmentId);
-                    return new RuntimeException("Apartment not found");
+                    return new ApartmentNotFoundException("Apartment not found");
                 });
 
         List<String> updatedUrls = new ArrayList<>(apartment.getPhotoUrls());

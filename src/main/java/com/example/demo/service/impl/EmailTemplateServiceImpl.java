@@ -1,5 +1,6 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.exception.EmailTemplateNotFoundException;
 import com.example.demo.model.EmailTemplate;
 import com.example.demo.repository.EmailTemplateRepository;
 import com.example.demo.service.EmailTemplateService;
@@ -23,20 +24,20 @@ public class EmailTemplateServiceImpl implements EmailTemplateService {
     public String getTemplateBody(String templateKey, String language) {
         Optional<EmailTemplate> template = emailTemplateRepository.findByTemplateKeyAndLanguage(templateKey, language);
         return template.map(EmailTemplate::getBody)
-                .orElseThrow(() -> new RuntimeException("Template not found: " + templateKey));
+                .orElseThrow(() -> new EmailTemplateNotFoundException("Template not found: " + templateKey));
     }
 
     @Override
     public String getTemplateSubject(String templateKey, String language) {
         Optional<EmailTemplate> template = emailTemplateRepository.findByTemplateKeyAndLanguage(templateKey, language);
         return template.map(EmailTemplate::getSubject)
-                .orElseThrow(() -> new RuntimeException("Template not found: " + templateKey));
+                .orElseThrow(() -> new EmailTemplateNotFoundException("Template not found: " + templateKey));
     }
 
     @Override
     public EmailTemplate getTemplateByKeyAndLanguage(String templateKey, String language) {
         return emailTemplateRepository.findByTemplateKeyAndLanguage(templateKey, language)
-                .orElseThrow(() -> new RuntimeException("Template not found: " + templateKey + " [" + language + "]"));
+                .orElseThrow(() -> new EmailTemplateNotFoundException("Template not found: " + templateKey + " [" + language + "]"));
     }
 
     @Override
@@ -47,7 +48,7 @@ public class EmailTemplateServiceImpl implements EmailTemplateService {
     @Override
     public EmailTemplate updateTemplate(Long id, EmailTemplate updatedTemplate) {
         EmailTemplate existingTemplate = emailTemplateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Template not found with id: " + id));
+                .orElseThrow(() -> new EmailTemplateNotFoundException("Template not found with id: " + id));
 
         existingTemplate.setTemplateKey(updatedTemplate.getTemplateKey());
         existingTemplate.setSubject(updatedTemplate.getSubject());

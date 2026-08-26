@@ -4,6 +4,9 @@ package com.example.demo.controller;
 import com.example.demo.dto.user.CreateUserDTO;
 import com.example.demo.dto.user.LoginDTO;
 import com.example.demo.dto.user.UserDTO;
+import com.example.demo.exception.InvalidOrExpiredTokenException;
+import com.example.demo.exception.JwtGenerationException;
+import com.example.demo.exception.UserNotFoundException;
 import com.example.demo.model.ConfirmationToken;
 import com.example.demo.model.User;
 import com.example.demo.repository.ConfirmationTokenRepository;
@@ -171,7 +174,7 @@ public class UserController {
             );
 
             User user = userRepository.findByEmail(loginDTO.getEmail())
-                    .orElseThrow(() -> new RuntimeException("User not found with given email"));
+                    .orElseThrow(() -> new UserNotFoundException("User not found with given email"));
 
             if (user.getEmailConfirmed() == null || !user.getEmailConfirmed()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -194,7 +197,7 @@ public class UserController {
     @GetMapping("/confirm")
     public ResponseEntity<String> confirmEmail(@RequestParam("token") String token) {
         ConfirmationToken confirmationToken = confirmationTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
+                .orElseThrow(() -> new InvalidOrExpiredTokenException("Invalid token"));
 
         if (confirmationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
             return ResponseEntity.badRequest().body("Token expired");
@@ -265,7 +268,7 @@ public class UserController {
             var encoder = new NimbusJwtEncoder(new ImmutableSecret<>(jwtSecretKey.getBytes()));
             return encoder.encode(params).getTokenValue();
         } catch (Exception e) {
-            throw new RuntimeException("Error generating JWT", e);
+            throw new JwtGenerationException("Error generating JWT", e);
         }
     }
 }

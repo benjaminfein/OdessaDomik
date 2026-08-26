@@ -1,6 +1,10 @@
 package com.example.demo.service.impl;
 
 import com.example.demo.dto.user.UserDTO;
+import com.example.demo.exception.DuplicateUserException;
+import com.example.demo.exception.EmailDeliveryException;
+import com.example.demo.exception.InvalidOrExpiredTokenException;
+import com.example.demo.exception.UserNotFoundException;
 import com.example.demo.mapper.UserMapper;
 import com.example.demo.model.PasswordResetToken;
 import com.example.demo.model.User;
@@ -43,20 +47,20 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDTO getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with given id"));
+                .orElseThrow(() -> new UserNotFoundException("User not found with given id"));
         return UserMapper.mapToUserDTO(user);
     }
 
     @Override
     public UserDTO updateUser(Long id, UserDTO userDTO) {
         User userToUpdate = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with given id"));
+                .orElseThrow(() -> new UserNotFoundException("User not found with given id"));
 
         if (userRepository.existsByEmail(userDTO.getEmail()) && !userDTO.getEmail().equals(userToUpdate.getEmail())) {
-            throw new RuntimeException("User with this email already exists");
+            throw new DuplicateUserException("User with this email already exists", "email");
         }
         if (userRepository.existsByUsername(userDTO.getUsername()) && !userDTO.getUsername().equals(userToUpdate.getUsername())) {
-            throw new RuntimeException("User with this username already exists");
+            throw new DuplicateUserException("User with this username already exists", "username");
         }
 
         userToUpdate.setUsername(userDTO.getUsername());
@@ -72,7 +76,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void sendResetPasswordEmail(String email, String lang) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with given email"));
+                .orElseThrow(() -> new UserNotFoundException("User not found with given email"));
 
         passwordResetTokenRepository.deletePasswordResetTokenByUserIdByUserId(user.getId());
 
@@ -101,17 +105,17 @@ public class UserServiceImpl implements UserService {
             log.info("[UserServiceImpl] Reset email sent to {}", user.getEmail());
         } catch (MessagingException e) {
             log.error("[UserServiceImpl] Failed to send reset email to {}", user.getEmail(), e);
-            throw new RuntimeException("Failed to send password reset email");
+            throw new EmailDeliveryException("Failed to send password reset email", e);
         }
     }
 
     @Override
     public void resetPassword(String token, String newPassword) {
         PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
+                .orElseThrow(() -> new InvalidOrExpiredTokenException("Invalid token"));
 
         if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Token has expired");
+            throw new InvalidOrExpiredTokenException("Token has expired");
         }
 
         User user = resetToken.getUser();
