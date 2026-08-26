@@ -1,13 +1,18 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.ApartmentDTO;
+import com.example.demo.dto.BookedDateRangeDTO;
+import com.example.demo.dto.MinStayDTO;
+import com.example.demo.dto.PriceDTO;
 import com.example.demo.dto.ReservationDTO;
 import com.example.demo.mapper.ApartmentMapper;
 import com.example.demo.service.ApartmentService;
+import com.example.demo.service.DateRangeRuleService;
 import com.example.demo.service.ReservationService;
 import jakarta.mail.MessagingException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +29,7 @@ import java.util.List;
 public class ApartmentController {
     private ApartmentService apartmentService;
     private ReservationService reservationService;
+    private DateRangeRuleService dateRangeRuleService;
 
     @PostMapping
     public ResponseEntity<ApartmentDTO> createApartment(@RequestBody ApartmentDTO apartmentDTO) {
@@ -58,6 +64,28 @@ public class ApartmentController {
 
     // Reservation endpoints
 
+    @GetMapping("/{id}/booked-dates")
+    public ResponseEntity<List<BookedDateRangeDTO>> getBookedDates(@PathVariable Long id) {
+        List<BookedDateRangeDTO> bookedDates = reservationService.getBookedDateRanges(id);
+        return ResponseEntity.ok(bookedDates);
+    }
+
+    @GetMapping("/{id}/min-stay")
+    public ResponseEntity<MinStayDTO> getMinStay(
+            @PathVariable Long id,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn) {
+        return ResponseEntity.ok(new MinStayDTO(dateRangeRuleService.getEffectiveMinStay(id, checkIn)));
+    }
+
+    @GetMapping("/{id}/price")
+    public ResponseEntity<PriceDTO> getPrice(
+            @PathVariable Long id,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut,
+            @RequestParam(defaultValue = "2") Long guestCount) {
+        return ResponseEntity.ok(new PriceDTO(reservationService.calculatePrice(id, checkIn, checkOut, guestCount)));
+    }
+
     @GetMapping("/available")
     public ResponseEntity<List<ApartmentDTO>> getAvailableApartments(
             @RequestParam(required = false) String checkIn,
@@ -88,6 +116,16 @@ public class ApartmentController {
     public ResponseEntity<List<ReservationDTO>> getAllReservations() {
         List<ReservationDTO> reservations = reservationService.getAllReservations();
         return ResponseEntity.ok(reservations);
+    }
+
+    @GetMapping("/{id}/reservations")
+    public ResponseEntity<List<ReservationDTO>> getReservationsByApartment(
+            @PathVariable Long id,
+            @RequestParam String from,
+            @RequestParam String to) {
+        LocalDate fromDate = LocalDate.parse(from);
+        LocalDate toDate = LocalDate.parse(to);
+        return ResponseEntity.ok(reservationService.getReservationsByApartmentAndDateRange(id, fromDate, toDate));
     }
 
     @DeleteMapping("/delete-reservation/{id}")

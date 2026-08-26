@@ -43,17 +43,16 @@ class ReservationRepositoryTest {
         user = userRepository.save(u);
 
         apartment = apartmentRepository.save(new Apartment(null, "Apt", "Short", "Desc",
-                "addr", 1000, false, false, 1, 50, false, 2, new ArrayList<>()));
+                "addr", 1000, false, false, 1, 50, false, 2, 0, false, null, null, false, null, null, new ArrayList<>()));
 
         reservationRepository.save(new Reservation(null, apartment, EXISTING_START, EXISTING_END,
-                2L, ReservationStatus.CONFIRMED, user, "john@test.com", "ua"));
+                2L, ReservationStatus.CONFIRMED, user, "john@test.com", "ua", null));
     }
 
     // --- findBookedApartmentIds ---
 
     @Test
     void findBookedApartmentIds_ShouldReturnId_WhenCheckInOverlaps() {
-        // checkIn falls inside existing reservation
         List<Long> result = reservationRepository.findBookedApartmentIds(
                 LocalDate.of(2025, 7, 15), LocalDate.of(2025, 7, 25));
 
@@ -63,7 +62,6 @@ class ReservationRepositoryTest {
 
     @Test
     void findBookedApartmentIds_ShouldReturnId_WhenCheckOutOverlaps() {
-        // checkOut falls inside existing reservation
         List<Long> result = reservationRepository.findBookedApartmentIds(
                 LocalDate.of(2025, 7, 5), LocalDate.of(2025, 7, 15));
 
@@ -72,7 +70,6 @@ class ReservationRepositoryTest {
 
     @Test
     void findBookedApartmentIds_ShouldReturnId_WhenNewRangeEncompassesExisting() {
-        // New range fully contains the existing reservation
         List<Long> result = reservationRepository.findBookedApartmentIds(
                 LocalDate.of(2025, 7, 1), LocalDate.of(2025, 7, 31));
 
@@ -81,7 +78,6 @@ class ReservationRepositoryTest {
 
     @Test
     void findBookedApartmentIds_ShouldReturnEmpty_WhenNoOverlap() {
-        // Completely before existing reservation
         List<Long> result = reservationRepository.findBookedApartmentIds(
                 LocalDate.of(2025, 6, 1), LocalDate.of(2025, 7, 5));
 
@@ -90,9 +86,59 @@ class ReservationRepositoryTest {
 
     @Test
     void findBookedApartmentIds_ShouldReturnEmpty_WhenAfterExisting() {
-        // Completely after existing reservation
         List<Long> result = reservationRepository.findBookedApartmentIds(
                 LocalDate.of(2025, 7, 25), LocalDate.of(2025, 8, 5));
+
+        assertTrue(result.isEmpty());
+    }
+
+    // --- findByApartment_IdAndStatusIn ---
+
+    @Test
+    void findByApartmentIdAndStatusIn_ShouldReturnConfirmedAndPending() {
+        reservationRepository.save(new Reservation(null, apartment,
+                LocalDate.of(2025, 8, 1), LocalDate.of(2025, 8, 5),
+                2L, ReservationStatus.PENDING, user, "john@test.com", "ua", null));
+
+        List<Reservation> result = reservationRepository.findByApartment_IdAndStatusIn(
+                apartment.getId(), List.of(ReservationStatus.CONFIRMED, ReservationStatus.PENDING));
+
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    void findByApartmentIdAndStatusIn_ShouldNotReturn_CanceledReservations() {
+        reservationRepository.save(new Reservation(null, apartment,
+                LocalDate.of(2025, 8, 1), LocalDate.of(2025, 8, 5),
+                2L, ReservationStatus.CANCELED, user, "john@test.com", "ua", null));
+
+        List<Reservation> result = reservationRepository.findByApartment_IdAndStatusIn(
+                apartment.getId(), List.of(ReservationStatus.CONFIRMED, ReservationStatus.PENDING));
+
+        assertEquals(1, result.size());
+        assertEquals(ReservationStatus.CONFIRMED, result.get(0).getStatus());
+    }
+
+    @Test
+    void findByApartmentIdAndStatusIn_ShouldReturnEmpty_WhenOnlyCanceled() {
+        reservationRepository.deleteAll();
+        reservationRepository.save(new Reservation(null, apartment,
+                LocalDate.of(2025, 8, 1), LocalDate.of(2025, 8, 5),
+                2L, ReservationStatus.CANCELED, user, "john@test.com", "ua", null));
+
+        List<Reservation> result = reservationRepository.findByApartment_IdAndStatusIn(
+                apartment.getId(), List.of(ReservationStatus.CONFIRMED, ReservationStatus.PENDING));
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void findByApartmentIdAndStatusIn_ShouldReturnEmpty_ForDifferentApartment() {
+        Apartment other = apartmentRepository.save(new Apartment(null, "Other", "Short", "Desc",
+                "addr2", 500, false, false, 2, 40, false, 2, 0, false, null, null, false, null, null, new ArrayList<>()));
+
+        List<Reservation> result = reservationRepository.findByApartment_IdAndStatusIn(
+                other.getId(), List.of(ReservationStatus.CONFIRMED, ReservationStatus.PENDING));
 
         assertTrue(result.isEmpty());
     }
@@ -103,7 +149,7 @@ class ReservationRepositoryTest {
     void deleteByStatus_ShouldDeleteOnlyMatchingReservations() {
         reservationRepository.save(new Reservation(null, apartment,
                 LocalDate.of(2025, 8, 1), LocalDate.of(2025, 8, 5),
-                2L, ReservationStatus.PENDING, user, "john@test.com", "ua"));
+                2L, ReservationStatus.PENDING, user, "john@test.com", "ua", null));
 
         reservationRepository.deleteByStatus(ReservationStatus.PENDING);
 

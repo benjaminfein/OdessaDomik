@@ -7,12 +7,17 @@ import com.example.demo.model.Apartment;
 import com.example.demo.repository.ApartmentRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.ApartmentService;
+import com.example.demo.service.DateRangeRuleService;
 import com.example.demo.service.ReservationService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,6 +25,7 @@ import java.util.stream.Collectors;
 public class ApartmentServiceImpl implements ApartmentService {
     private ApartmentRepository apartmentRepository;
     private ReservationService reservationService;
+    private DateRangeRuleService dateRangeRuleService;
 
     @Override
     public ApartmentDTO createApartment(ApartmentDTO apartmentDTO) {
@@ -72,12 +78,17 @@ public class ApartmentServiceImpl implements ApartmentService {
         if (startDate == null || endDate == null) {
             availableApartments = apartmentRepository.findByCountOfSleepPlacesGreaterThanEqual(guestCount);
         } else {
-            List<Long> bookedApartmentIds = reservationService.findBookedApartmentIds(startDate, endDate);
+            int nights = (int) ChronoUnit.DAYS.between(startDate, endDate);
 
-            availableApartments = bookedApartmentIds.isEmpty()
+            Set<Long> excludedIds = new HashSet<>();
+            excludedIds.addAll(reservationService.findBookedApartmentIds(startDate, endDate));
+            excludedIds.addAll(dateRangeRuleService.findClosedApartmentIds(startDate, endDate));
+            excludedIds.addAll(dateRangeRuleService.findApartmentIdsWithInsufficientStay(startDate, nights));
+
+            availableApartments = excludedIds.isEmpty()
                     ? apartmentRepository.findByCountOfSleepPlacesGreaterThanEqual(guestCount)
                     : apartmentRepository
-                    .findByIdNotInAndCountOfSleepPlacesGreaterThanEqual(bookedApartmentIds, guestCount);
+                    .findByIdNotInAndCountOfSleepPlacesGreaterThanEqual(new ArrayList<>(excludedIds), guestCount);
         }
 
         return availableApartments.stream().map(ApartmentMapper::mapToApartmentDTO).toList();

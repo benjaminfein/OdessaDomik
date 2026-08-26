@@ -20,5 +20,16 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
         """)
     List<Long> findBookedApartmentIds(@Param("checkInDate") LocalDate checkInDate, @Param("checkOutDate") LocalDate checkOutDate);
 
+    List<Reservation> findByApartment_IdAndStatusIn(Long apartmentId, List<ReservationStatus> statuses);
+
+    @Query("SELECT r FROM Reservation r WHERE r.apartment.id = :apartmentId " +
+           "AND r.checkInDate <= :to AND r.checkOutDate >= :from " +
+           "AND r.status IN :statuses")
+    List<Reservation> findByApartmentAndDateRange(
+            @Param("apartmentId") Long apartmentId,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to,
+            @Param("statuses") List<ReservationStatus> statuses);
+
     void deleteByStatus(ReservationStatus status);
 }

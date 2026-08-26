@@ -1,6 +1,7 @@
 package com.example.demo.model;
 
 import com.example.demo.dto.ApartmentDTO;
+import com.example.demo.enums.PriceUnit;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -39,6 +40,25 @@ public class Apartment {
     private Boolean hasSeaView = false;
     @Column(name = "countOfSleepPlaces")
     private Integer countOfSleepPlaces;
+    @Column(name = "gap_days")
+    private Integer gapDays = 0;
+
+    @Column(name = "guestPriceAboveEnabled")
+    private Boolean guestPriceAboveEnabled = false;
+    @Column(name = "guestPriceAboveValue")
+    private Integer guestPriceAboveValue;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "guestPriceAboveUnit")
+    private PriceUnit guestPriceAboveUnit;
+
+    @Column(name = "guestPriceBelowEnabled")
+    private Boolean guestPriceBelowEnabled = false;
+    @Column(name = "guestPriceBelowValue")
+    private Integer guestPriceBelowValue;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "guestPriceBelowUnit")
+    private PriceUnit guestPriceBelowUnit;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "apartment_photos", joinColumns = @JoinColumn(name = "apartment_id"))
     @Column(name = "photo_url")
@@ -59,6 +79,12 @@ public class Apartment {
         apartmentDTO.setAreaOfApartment(areaOfApartment);
         apartmentDTO.setHasSeaView(hasSeaView);
         apartmentDTO.setCountOfSleepPlaces(countOfSleepPlaces);
+        apartmentDTO.setGuestPriceAboveEnabled(guestPriceAboveEnabled);
+        apartmentDTO.setGuestPriceAboveValue(guestPriceAboveValue);
+        apartmentDTO.setGuestPriceAboveUnit(guestPriceAboveUnit != null ? guestPriceAboveUnit.name() : null);
+        apartmentDTO.setGuestPriceBelowEnabled(guestPriceBelowEnabled);
+        apartmentDTO.setGuestPriceBelowValue(guestPriceBelowValue);
+        apartmentDTO.setGuestPriceBelowUnit(guestPriceBelowUnit != null ? guestPriceBelowUnit.name() : null);
 
         return apartmentDTO;
     }

@@ -44,4 +44,7 @@ public class Reservation {
 
     @Column(name = "client_lang")
     private String clientLang;
+
+    @Column(name = "total_price")
+    private Integer totalPrice;
 }

@@ -24,11 +24,11 @@ class ApartmentRepositoryTest {
     @BeforeEach
     void setUp() {
         apt2 = apartmentRepository.save(new Apartment(null, "Studio", "Short", "Desc",
-                "addr1", 500, false, true, 2, 30, false, 2, new ArrayList<>()));
+                "addr1", 500, false, true, 2, 30, false, 2, 0, false, null, null, false, null, null, new ArrayList<>()));
         apt4 = apartmentRepository.save(new Apartment(null, "Two-bedroom", "Short", "Desc",
-                "addr2", 1000, true, true, 5, 70, false, 4, new ArrayList<>()));
+                "addr2", 1000, true, true, 5, 70, false, 4, 0, false, null, null, false, null, null, new ArrayList<>()));
         apt6 = apartmentRepository.save(new Apartment(null, "Penthouse", "Short", "Desc",
-                "addr3", 2000, true, true, 10, 120, true, 6, new ArrayList<>()));
+                "addr3", 2000, true, true, 10, 120, true, 6, 0, false, null, null, false, null, null, new ArrayList<>()));
     }
 
     @Test

@@ -47,7 +47,7 @@ class S3ServiceImplTest {
     @Test
     void uploadFiles_ShouldAddUrlsToApartmentAndSave() throws IOException {
         Apartment apartment = new Apartment(1L, "Apt", null, null, "addr", 1000,
-                false, false, 1, 50, false, 2, new ArrayList<>());
+                false, false, 1, 50, false, 2, 0, false, null, null, false, null, null, new ArrayList<>());
 
         MultipartFile file = mock(MultipartFile.class);
         when(file.getOriginalFilename()).thenReturn("photo.jpg");
@@ -80,7 +80,7 @@ class S3ServiceImplTest {
         photoUrls.add("https://test-bucket.s3.eu-central-1.amazonaws.com/apartments/1/photo.jpg");
 
         Apartment apartment = new Apartment(1L, "Apt", null, null, "addr", 1000,
-                false, false, 1, 50, false, 2, photoUrls);
+                false, false, 1, 50, false, 2, 0, false, null, null, false, null, null, photoUrls);
 
         when(apartmentRepository.findById(1L)).thenReturn(Optional.of(apartment));
 

@@ -52,6 +52,13 @@ public class ApartmentServiceImplTest {
                 56,
                 false,
                 6,
+                0,
+                false,
+                null,
+                null,
+                false,
+                null,
+                null,
                 new ArrayList<>()
         );
 
@@ -199,6 +206,13 @@ public class ApartmentServiceImplTest {
                 56,
                 false,
                 6,
+                0,
+                false,
+                null,
+                null,
+                false,
+                null,
+                null,
                 new ArrayList<>()
         );
 
@@ -215,6 +229,13 @@ public class ApartmentServiceImplTest {
                 56,
                 false,
                 4,
+                0,
+                false,
+                null,
+                null,
+                false,
+                null,
+                null,
                 new ArrayList<>()
         );
 

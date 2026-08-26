@@ -66,6 +66,8 @@ public class SecurityConfig {
             "/api/apartments",
             "/api/apartments/available",
             "/api/apartments/{id}",
+            "/api/apartments/{id}/booked-dates",
+            "/api/apartments/{id}/min-stay",
             "/api/user/register",
             "/api/user/login",
             "/api/user/forgot-password",

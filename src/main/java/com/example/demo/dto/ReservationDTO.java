@@ -20,4 +20,6 @@ public class ReservationDTO {
     private Long userId;
     private String clientEmail;
     private String clientLang;
+    private Integer totalPrice;
+    private String userName;
 }

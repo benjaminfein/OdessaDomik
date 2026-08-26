@@ -22,5 +22,12 @@ public class ApartmentDTO {
     private Integer areaOfApartment;
     private Boolean hasSeaView = false;
     private Integer countOfSleepPlaces;
+    private Integer gapDays = 0;
+    private Boolean guestPriceAboveEnabled = false;
+    private Integer guestPriceAboveValue;
+    private String guestPriceAboveUnit;
+    private Boolean guestPriceBelowEnabled = false;
+    private Integer guestPriceBelowValue;
+    private String guestPriceBelowUnit;
     private List<String> photoUrls;
 }

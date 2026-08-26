@@ -161,7 +161,7 @@ class ApartmentControllerTest {
     void getAllReservations_ShouldReturn200_WhenAdmin() throws Exception {
         ReservationDTO res = new ReservationDTO(1L, 1L,
                 LocalDate.of(2025, 7, 1), LocalDate.of(2025, 7, 7),
-                2L, ReservationStatus.CONFIRMED, 1L, "john@test.com", "ua");
+                2L, ReservationStatus.CONFIRMED, 1L, "john@test.com", "ua", null, null);
         when(reservationService.getAllReservations()).thenReturn(List.of(res));
 
         mockMvc.perform(get("/api/apartments/get-reservations")
