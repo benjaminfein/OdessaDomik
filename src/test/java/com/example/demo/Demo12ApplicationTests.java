@@ -10,7 +10,6 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles({"dev", "test"})
 class Demo12ApplicationTests {
 
-    // Prevents MailVerifier from attempting a real SMTP connection on startup
     @MockBean
     private JavaMailSenderImpl javaMailSender;
 

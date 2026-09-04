@@ -30,8 +30,6 @@ class S3ControllerTest {
     @MockBean private S3Service s3Service;
     @MockBean private JavaMailSenderImpl javaMailSender;
 
-    // --- GET /api/s3/list/{apartmentId} (public) ---
-
     @Test
     void listFiles_ShouldReturn200_WhenPublic() throws Exception {
         when(s3Service.listFiles(1L)).thenReturn(List.of(
@@ -52,8 +50,6 @@ class S3ControllerTest {
                 .andExpect(jsonPath("$").isEmpty());
     }
 
-    // --- POST /api/s3/upload-multiple (admin only) ---
-
     @Test
     void uploadFiles_ShouldReturn200_WhenAdmin() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
@@ -69,7 +65,6 @@ class S3ControllerTest {
                         "Files uploaded and attached to apartment with id \"1\" successfully."));
     }
 
-    // On dev profile admin endpoints are open — upload works without auth
     @Test
     void uploadFiles_ShouldReturn200_WhenNoAuth_OnDev() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
@@ -96,8 +91,6 @@ class S3ControllerTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("S3 error")));
     }
 
-    // --- DELETE /api/s3/delete-multiple/{apartmentId} (admin only) ---
-
     @Test
     void deleteFiles_ShouldReturn200_WhenAdmin() throws Exception {
         doNothing().when(s3Service).deleteFiles(eq(1L), anyList());
@@ -109,7 +102,6 @@ class S3ControllerTest {
                 .andExpect(content().string("Files deleted successfully."));
     }
 
-    // On dev profile admin endpoints are open — delete works without auth
     @Test
     void deleteFiles_ShouldReturn200_WhenNoAuth_OnDev() throws Exception {
         doNothing().when(s3Service).deleteFiles(eq(1L), anyList());

@@ -37,8 +37,6 @@ class EmailTemplateControllerTest {
         return new EmailTemplate(id, "email_confirmation", "ua", "Confirm email", "Click {{link}}");
     }
 
-    // --- POST /api/email-templates/create-template (admin only) ---
-
     @Test
     void createTemplate_ShouldReturn200_WhenAdmin() throws Exception {
         EmailTemplate input = template(null);
@@ -53,7 +51,6 @@ class EmailTemplateControllerTest {
                 .andExpect(jsonPath("$.templateKey").value("email_confirmation"));
     }
 
-    // On dev profile admin endpoints are open to all
     @Test
     void createTemplate_ShouldReturn200_WhenNoAuth_OnDev() throws Exception {
         when(emailTemplateService.createTemplate(any())).thenReturn(template(1L));
@@ -63,8 +60,6 @@ class EmailTemplateControllerTest {
                         .content(objectMapper.writeValueAsString(template(null))))
                 .andExpect(status().isOk());
     }
-
-    // --- GET /api/email-templates/get-all-templates (admin only) ---
 
     @Test
     void getAllTemplates_ShouldReturn200_WhenAdmin() throws Exception {
@@ -77,7 +72,6 @@ class EmailTemplateControllerTest {
                 .andExpect(jsonPath("$.length()").value(2));
     }
 
-    // On dev profile admin endpoints are open — no auth still returns 200
     @Test
     void getAllTemplates_ShouldReturn200_WhenNoAuth_OnDev() throws Exception {
         when(emailTemplateService.getAllTemplates()).thenReturn(List.of());
@@ -85,8 +79,6 @@ class EmailTemplateControllerTest {
         mockMvc.perform(get("/api/email-templates/get-all-templates"))
                 .andExpect(status().isOk());
     }
-
-    // --- GET /api/email-templates/get-template-by-key (admin only) ---
 
     @Test
     void getTemplateByKey_ShouldReturn200_WhenAdmin() throws Exception {
@@ -100,8 +92,6 @@ class EmailTemplateControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.templateKey").value("email_confirmation"));
     }
-
-    // --- PUT /api/email-templates/update-template/{id} (admin only) ---
 
     @Test
     void updateTemplate_ShouldReturn200_WhenAdmin() throws Exception {
@@ -117,8 +107,6 @@ class EmailTemplateControllerTest {
                 .andExpect(jsonPath("$.subject").value("New Subject"));
     }
 
-    // --- DELETE /api/email-templates/delete-template/{id} (admin only) ---
-
     @Test
     void deleteTemplate_ShouldReturn200_WhenAdmin() throws Exception {
         doNothing().when(emailTemplateService).deleteTemplate(1L);
@@ -129,7 +117,6 @@ class EmailTemplateControllerTest {
                 .andExpect(content().string("Template deleted successfully!"));
     }
 
-    // On dev profile admin endpoints are open — no auth still returns 200
     @Test
     void deleteTemplate_ShouldReturn200_WhenNoAuth_OnDev() throws Exception {
         doNothing().when(emailTemplateService).deleteTemplate(1L);
