@@ -109,7 +109,6 @@ public class UserController {
             var bCryptEncoder = new BCryptPasswordEncoder();
 
             User user = new User();
-            user.setUsername(createUserDTO.getUsername());
             user.setEmail(createUserDTO.getEmail());
             user.setName(createUserDTO.getName());
             user.setPhoneNumber(createUserDTO.getPhoneNumber());
@@ -138,7 +137,7 @@ public class UserController {
                     "email_confirmation",
                     Map.of(
                             "link", confirmUrl,
-                            "username", user.getUsername(),
+                            "username", user.getName(),
                             "lang", lang
                     )
             );
@@ -234,6 +233,12 @@ public class UserController {
     public ResponseEntity<UserDTO> updateUser(@PathVariable("id") Long id, @RequestBody UserDTO userDTO) {
         UserDTO updatedUserDTO = userService.updateUser(id, userDTO);
         return ResponseEntity.ok(updatedUserDTO);
+    }
+
+    @PutMapping("{id}/unban")
+    public ResponseEntity<String> unbanUser(@PathVariable("id") Long id) {
+        userService.unbanUser(id);
+        return ResponseEntity.ok("User unbanned successfully!");
     }
 
     @PostMapping("/forgot-password")

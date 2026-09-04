@@ -81,6 +81,7 @@ public class SecurityConfig {
             "/api/admin/**",
             "/api/user/delete/**",
             "/api/user/allUsers",
+            "/api/user/*/unban",
             "/api/email-templates/create-template",
             "/api/email-templates/get-all-templates",
             "/api/email-templates/get-template-by-key",

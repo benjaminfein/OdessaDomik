@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Data
@@ -47,4 +48,27 @@ public class Reservation {
 
     @Column(name = "total_price")
     private Integer totalPrice;
+
+    @Column(name = "created_at")
+    private Instant createdAt;
+
+    public Reservation(Long id, Apartment apartment, LocalDate checkInDate, LocalDate checkOutDate,
+                        Long guestCount, ReservationStatus status, User user, String clientEmail,
+                        String clientLang, Integer totalPrice) {
+        this.id = id;
+        this.apartment = apartment;
+        this.checkInDate = checkInDate;
+        this.checkOutDate = checkOutDate;
+        this.guestCount = guestCount;
+        this.status = status;
+        this.user = user;
+        this.clientEmail = clientEmail;
+        this.clientLang = clientLang;
+        this.totalPrice = totalPrice;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = Instant.now();
+    }
 }

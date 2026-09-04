@@ -9,6 +9,7 @@ import com.example.demo.exception.ApartmentNotFoundException;
 import com.example.demo.exception.MinStayViolationException;
 import com.example.demo.exception.ReservationConflictException;
 import com.example.demo.exception.ReservationNotFoundException;
+import com.example.demo.exception.UserBannedException;
 import com.example.demo.mapper.ReservationMapper;
 import com.example.demo.model.Apartment;
 import com.example.demo.model.DateRangeRule;
@@ -19,6 +20,7 @@ import com.example.demo.repository.DateRangeRuleRepository;
 import com.example.demo.repository.ReservationRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.EmailService;
+import com.example.demo.service.ReservationRateLimiter;
 import com.example.demo.service.ReservationService;
 import jakarta.mail.MessagingException;
 import lombok.AllArgsConstructor;
@@ -26,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -40,6 +43,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final ApartmentRepository apartmentRepository;
     private final UserRepository userRepository;
     private final DateRangeRuleRepository dateRangeRuleRepository;
+    private final ReservationRateLimiter reservationRateLimiter;
 
     @Autowired
     private EmailService emailService;
@@ -67,6 +71,8 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public ReservationDTO createReservation(ReservationDTO reservationDTO) {
+        reservationRateLimiter.checkAndRecordAttempt();
+
         Long apartmentId = reservationDTO.getApartmentId();
         Apartment apartment = apartmentRepository.findById(apartmentId)
                 .orElseThrow(() -> new ApartmentNotFoundException("Apartment not found: " + apartmentId));
@@ -95,10 +101,41 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         Reservation reservation = ReservationMapper.mapToReservation(reservationDTO, apartmentRepository, userRepository);
+        checkAndUpdateBanStatus(reservation.getUser());
         reservation.setTotalPrice(calculateTotalPrice(apartment, rules, newCheckIn, newCheckOut, reservationDTO.getGuestCount()));
 
         Reservation savedReservation = reservationRepository.save(reservation);
         return ReservationMapper.mapToReservationDTO(savedReservation);
+    }
+
+    private void checkAndUpdateBanStatus(User user) {
+        Instant now = Instant.now();
+
+        if (user.getBannedUntil() != null && user.getBannedUntil().isAfter(now)) {
+            throw new UserBannedException("You are temporarily banned from booking.", user.getBannedUntil());
+        }
+
+        int strike = user.getBanStrikeCount() == null ? 0 : user.getBanStrikeCount();
+        Instant windowStart = strike == 0 ? now.minus(24, ChronoUnit.HOURS) : user.getBanWindowStart();
+
+        long recentPendingCount = reservationRepository.countByUser_IdAndStatusAndCreatedAtAfter(
+                user.getId(), ReservationStatus.PENDING, windowStart);
+        long countIncludingNew = recentPendingCount + 1;
+
+        if (strike == 0 && countIncludingNew > 3) {
+            user.setBannedUntil(now.plus(5, ChronoUnit.MINUTES));
+            user.setBanStrikeCount(1);
+            user.setBanWindowStart(now);
+            userRepository.save(user);
+            throw new UserBannedException("You have been temporarily banned from booking.", user.getBannedUntil());
+        }
+
+        if (strike >= 1 && countIncludingNew > 5) {
+            user.setBannedUntil(now.plus(30, ChronoUnit.MINUTES));
+            user.setBanWindowStart(now);
+            userRepository.save(user);
+            throw new UserBannedException("You have been temporarily banned from booking.", user.getBannedUntil());
+        }
     }
 
     @Override
@@ -266,7 +303,7 @@ public class ReservationServiceImpl implements ReservationService {
         String complexName = reservation.getApartment().getComplexName();
 
         Map<String, String> clientPlaceholders = new HashMap<>();
-        clientPlaceholders.put("user.name", reservation.getUser().getUsername());
+        clientPlaceholders.put("user.name", reservation.getUser().getName());
         clientPlaceholders.put("reservation.id", reservation.getId().toString());
         clientPlaceholders.put("apartment.name", reservation.getApartment().getName());
         clientPlaceholders.put("apartment.address", reservation.getApartment().getAddress());
@@ -289,7 +326,6 @@ public class ReservationServiceImpl implements ReservationService {
         managerPlaceholders.put("user.name", reservation.getUser().getName());
         managerPlaceholders.put("user.email", reservation.getUser().getEmail());
         managerPlaceholders.put("user.phoneNumber", reservation.getUser().getPhoneNumber());
-        managerPlaceholders.put("user.username", reservation.getUser().getUsername());
         managerPlaceholders.put("lang", reservation.getClientLang());
 
         for (String managerEmail : managerEmails) {

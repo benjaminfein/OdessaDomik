@@ -7,6 +7,8 @@ import com.example.demo.enums.RuleStatus;
 import com.example.demo.exception.MinStayViolationException;
 import com.example.demo.exception.ReservationConflictException;
 import com.example.demo.exception.ReservationNotFoundException;
+import com.example.demo.exception.ReservationsLockedDownException;
+import com.example.demo.exception.UserBannedException;
 import com.example.demo.model.Apartment;
 import com.example.demo.model.DateRangeRule;
 import com.example.demo.model.Reservation;
@@ -24,7 +26,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -40,6 +44,7 @@ class ReservationServiceImplTest {
     @Mock private ApartmentRepository apartmentRepository;
     @Mock private UserRepository userRepository;
     @Mock private DateRangeRuleRepository dateRangeRuleRepository;
+    @Mock private ReservationRateLimiter reservationRateLimiter;
     @Mock private EmailService emailService;
 
     @InjectMocks
@@ -52,8 +57,8 @@ class ReservationServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        user = new User(1L, "john", "john@test.com", "+380991234567", "client", "John Doe", "encoded");
-        admin = new User(2L, "admin", "admin@test.com", "+380997654321", "admin", "Admin User", "encoded");
+        user = new User(1L, "john@test.com", "+380991234567", "client", "John Doe", "encoded");
+        admin = new User(2L, "admin@test.com", "+380997654321", "admin", "Admin User", "encoded");
 
         apartment = new Apartment(1L, "Apt 1", "Short", "Desc",
                 "Гагаринское плато 5/2", 1000, true, true, 3, 60, true, 4, 0,
@@ -63,8 +68,6 @@ class ReservationServiceImplTest {
                 LocalDate.of(2025, 7, 1), LocalDate.of(2025, 7, 7),
                 2L, ReservationStatus.PENDING, user, "john@test.com", "ua", null);
     }
-
-    // --- findBookedApartmentIds ---
 
     @Test
     void findBookedApartmentIds_ShouldDelegateToRepository() {
@@ -77,8 +80,6 @@ class ReservationServiceImplTest {
         assertEquals(List.of(1L, 2L), result);
         verify(reservationRepository).findBookedApartmentIds(start, end);
     }
-
-    // --- getBookedDateRanges ---
 
     @Test
     void getBookedDateRanges_ShouldReturnRanges_WithGapDaysZero() {
@@ -105,7 +106,6 @@ class ReservationServiceImplTest {
 
         List<BookedDateRangeDTO> result = reservationService.getBookedDateRanges(1L);
 
-        // checkOut=Jul 7 + gapDays=2 → effectiveCheckOut=Jul 9
         assertEquals(LocalDate.of(2025, 7, 9), result.get(0).getEffectiveCheckOut());
     }
 
@@ -126,8 +126,6 @@ class ReservationServiceImplTest {
 
         assertThrows(RuntimeException.class, () -> reservationService.getBookedDateRanges(99L));
     }
-
-    // --- createReservation ---
 
     @Test
     void createReservation_ShouldSave_WhenNoExistingReservations() {
@@ -152,7 +150,6 @@ class ReservationServiceImplTest {
                 LocalDate.of(2025, 7, 10), LocalDate.of(2025, 7, 20),
                 2L, ReservationStatus.CONFIRMED, user, "john@test.com", "ua", null);
 
-        // New reservation partially overlaps: 15 Jul – 25 Jul
         ReservationDTO dto = new ReservationDTO(null, 1L,
                 LocalDate.of(2025, 7, 15), LocalDate.of(2025, 7, 25),
                 2L, ReservationStatus.PENDING, 1L, "john@test.com", "ua", null, null);
@@ -185,7 +182,6 @@ class ReservationServiceImplTest {
 
     @Test
     void createReservation_ShouldAllow_WhenNewCheckInEqualsExistingCheckOut_GapDaysZero() {
-        // Existing: Jul 1 – Jul 7. New: Jul 7 – Jul 12. gapDays=0 → allowed (day of checkout is free)
         Reservation existing = new Reservation(2L, apartment,
                 LocalDate.of(2025, 7, 1), LocalDate.of(2025, 7, 7),
                 2L, ReservationStatus.CONFIRMED, user, "john@test.com", "ua", null);
@@ -206,7 +202,6 @@ class ReservationServiceImplTest {
 
     @Test
     void createReservation_ShouldThrowConflict_WhenNewCheckInEqualsExistingCheckOut_GapDaysOne() {
-        // Existing: Jul 1 – Jul 7. gapDays=1 → effectiveEnd=Jul 8. New checkIn=Jul 7 < Jul 8 → conflict
         Apartment aptWithGap = new Apartment(1L, "Apt 1", "Short", "Desc",
                 "Гагаринское плато 5/2", 1000, true, true, 3, 60, true, 4, 1,
                 false, null, null, false, null, null, new ArrayList<>());
@@ -228,7 +223,6 @@ class ReservationServiceImplTest {
 
     @Test
     void createReservation_ShouldAllow_WhenNewCheckInAfterGapDays() {
-        // Existing: Jul 1 – Jul 7. gapDays=1 → effectiveEnd=Jul 8. New checkIn=Jul 8 → allowed
         Apartment aptWithGap = new Apartment(1L, "Apt 1", "Short", "Desc",
                 "Гагаринское плато 5/2", 1000, true, true, 3, 60, true, 4, 1,
                 false, null, null, false, null, null, new ArrayList<>());
@@ -261,7 +255,6 @@ class ReservationServiceImplTest {
                 2L, ReservationStatus.PENDING, 1L, "john@test.com", "ua", null, null);
 
         when(apartmentRepository.findById(1L)).thenReturn(Optional.of(apartment));
-        // Repository already filtered by status — returns empty (CANCELED excluded)
         when(reservationRepository.findByApartment_IdAndStatusIn(eq(1L), anyList()))
                 .thenReturn(List.of());
         when(userRepository.findByEmail("john@test.com")).thenReturn(Optional.of(user));
@@ -271,12 +264,10 @@ class ReservationServiceImplTest {
         verify(reservationRepository).save(any(Reservation.class));
     }
 
-    // --- createReservation: minStay ---
-
     @Test
     void createReservation_ShouldThrowMinStayViolation_WhenStayShorterThanRuleMinStay() {
         LocalDate checkIn = LocalDate.of(2025, 8, 1);
-        LocalDate checkOut = LocalDate.of(2025, 8, 2); // 1 night
+        LocalDate checkOut = LocalDate.of(2025, 8, 2);
 
         DateRangeRule rule = new DateRangeRule(1L, apartment,
                 LocalDate.of(2025, 8, 1), LocalDate.of(2025, 8, 10),
@@ -296,7 +287,7 @@ class ReservationServiceImplTest {
     @Test
     void createReservation_ShouldAllow_WhenStayMeetsRuleMinStay() {
         LocalDate checkIn = LocalDate.of(2025, 8, 1);
-        LocalDate checkOut = LocalDate.of(2025, 8, 4); // 3 nights
+        LocalDate checkOut = LocalDate.of(2025, 8, 4);
 
         DateRangeRule rule = new DateRangeRule(1L, apartment,
                 LocalDate.of(2025, 8, 1), LocalDate.of(2025, 8, 10),
@@ -318,9 +309,8 @@ class ReservationServiceImplTest {
 
     @Test
     void createReservation_ShouldIgnore_RuleOutsideCheckInDate() {
-        // Rule covers Aug 10-20 with minStay=5; new stay starts Aug 1 (outside the rule) — should not apply.
         LocalDate checkIn = LocalDate.of(2025, 8, 1);
-        LocalDate checkOut = LocalDate.of(2025, 8, 2); // 1 night
+        LocalDate checkOut = LocalDate.of(2025, 8, 2);
 
         DateRangeRule rule = new DateRangeRule(1L, apartment,
                 LocalDate.of(2025, 8, 10), LocalDate.of(2025, 8, 20),
@@ -340,7 +330,74 @@ class ReservationServiceImplTest {
         verify(reservationRepository).save(any(Reservation.class));
     }
 
-    // --- getAllReservations ---
+    @Test
+    void createReservation_ShouldThrow_WhenGlobalLockdownActive() {
+        ReservationDTO dto = new ReservationDTO(null, 1L,
+                LocalDate.of(2025, 8, 1), LocalDate.of(2025, 8, 5),
+                2L, ReservationStatus.PENDING, 1L, "john@test.com", "ua", null, null);
+
+        doThrow(new ReservationsLockedDownException("locked")).when(reservationRateLimiter).checkAndRecordAttempt();
+
+        assertThrows(ReservationsLockedDownException.class, () -> reservationService.createReservation(dto));
+        verify(apartmentRepository, never()).findById(any());
+    }
+
+    @Test
+    void createReservation_ShouldBanUser_WhenFourthPendingWithin24Hours() {
+        ReservationDTO dto = new ReservationDTO(null, 1L,
+                LocalDate.of(2025, 8, 1), LocalDate.of(2025, 8, 5),
+                2L, ReservationStatus.PENDING, 1L, "john@test.com", "ua", null, null);
+
+        when(apartmentRepository.findById(1L)).thenReturn(Optional.of(apartment));
+        when(reservationRepository.findByApartment_IdAndStatusIn(eq(1L), anyList())).thenReturn(List.of());
+        when(userRepository.findByEmail("john@test.com")).thenReturn(Optional.of(user));
+        when(reservationRepository.countByUser_IdAndStatusAndCreatedAtAfter(eq(1L), eq(ReservationStatus.PENDING), any()))
+                .thenReturn(3L);
+
+        assertThrows(UserBannedException.class, () -> reservationService.createReservation(dto));
+
+        assertNotNull(user.getBannedUntil());
+        assertEquals(1, user.getBanStrikeCount());
+        verify(userRepository).save(user);
+        verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_ShouldThrow_WhenAlreadyBanned() {
+        user.setBannedUntil(Instant.now().plus(30, ChronoUnit.SECONDS));
+
+        ReservationDTO dto = new ReservationDTO(null, 1L,
+                LocalDate.of(2025, 8, 1), LocalDate.of(2025, 8, 5),
+                2L, ReservationStatus.PENDING, 1L, "john@test.com", "ua", null, null);
+
+        when(apartmentRepository.findById(1L)).thenReturn(Optional.of(apartment));
+        when(reservationRepository.findByApartment_IdAndStatusIn(eq(1L), anyList())).thenReturn(List.of());
+        when(userRepository.findByEmail("john@test.com")).thenReturn(Optional.of(user));
+
+        assertThrows(UserBannedException.class, () -> reservationService.createReservation(dto));
+        verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_ShouldEscalateBanToThirtyMinutes_WhenSixthNewPendingAfterFirstBan() {
+        user.setBanStrikeCount(1);
+        user.setBanWindowStart(Instant.now().minus(2, ChronoUnit.HOURS));
+
+        ReservationDTO dto = new ReservationDTO(null, 1L,
+                LocalDate.of(2025, 8, 1), LocalDate.of(2025, 8, 5),
+                2L, ReservationStatus.PENDING, 1L, "john@test.com", "ua", null, null);
+
+        when(apartmentRepository.findById(1L)).thenReturn(Optional.of(apartment));
+        when(reservationRepository.findByApartment_IdAndStatusIn(eq(1L), anyList())).thenReturn(List.of());
+        when(userRepository.findByEmail("john@test.com")).thenReturn(Optional.of(user));
+        when(reservationRepository.countByUser_IdAndStatusAndCreatedAtAfter(eq(1L), eq(ReservationStatus.PENDING), any()))
+                .thenReturn(5L);
+
+        assertThrows(UserBannedException.class, () -> reservationService.createReservation(dto));
+
+        assertTrue(user.getBannedUntil().isAfter(Instant.now().plus(29, ChronoUnit.MINUTES)));
+        verify(userRepository).save(user);
+    }
 
     @Test
     void getAllReservations_ShouldReturnMappedDTOs() {
@@ -352,8 +409,6 @@ class ReservationServiceImplTest {
         assertEquals(1L, result.get(0).getId());
         assertEquals("john@test.com", result.get(0).getClientEmail());
     }
-
-    // --- deleteReservation ---
 
     @Test
     void deleteReservation_ShouldDelete_WhenFound() {
@@ -372,16 +427,12 @@ class ReservationServiceImplTest {
         verify(reservationRepository, never()).deleteById(any());
     }
 
-    // --- deletePendingReservations ---
-
     @Test
     void deletePendingReservations_ShouldCallRepositoryDelete() {
         reservationService.deletePendingReservations();
 
         verify(reservationRepository).deleteByStatus(ReservationStatus.PENDING);
     }
-
-    // --- pendingReservation ---
 
     @Test
     void pendingReservation_ShouldSetStatusAndSendEmails() throws MessagingException {
@@ -403,8 +454,6 @@ class ReservationServiceImplTest {
         assertThrows(RuntimeException.class, () -> reservationService.pendingReservation(99L));
     }
 
-    // --- cancelReservation ---
-
     @Test
     void cancelReservation_ShouldSetStatusAndSendEmails() throws MessagingException {
         when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
@@ -424,8 +473,6 @@ class ReservationServiceImplTest {
 
         assertThrows(RuntimeException.class, () -> reservationService.cancelReservation(99L));
     }
-
-    // --- confirmReservation ---
 
     @Test
     void confirmReservation_ShouldSetStatusAndSendEmails() throws MessagingException {

@@ -59,11 +59,7 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsByEmail(userDTO.getEmail()) && !userDTO.getEmail().equals(userToUpdate.getEmail())) {
             throw new DuplicateUserException("User with this email already exists", "email");
         }
-        if (userRepository.existsByUsername(userDTO.getUsername()) && !userDTO.getUsername().equals(userToUpdate.getUsername())) {
-            throw new DuplicateUserException("User with this username already exists", "username");
-        }
 
-        userToUpdate.setUsername(userDTO.getUsername());
         userToUpdate.setEmail(userDTO.getEmail());
         userToUpdate.setPhoneNumber(userDTO.getPhoneNumber());
         userToUpdate.setName(userDTO.getName());
@@ -98,7 +94,7 @@ public class UserServiceImpl implements UserService {
                     "reset_password",
                     Map.of(
                             "link", resetLink,
-                            "username", user.getUsername(),
+                            "username", user.getName(),
                             "lang", lang
                     )
             );
@@ -122,5 +118,16 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         passwordResetTokenRepository.delete(resetToken);
+    }
+
+    @Override
+    public void unbanUser(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found with given id"));
+
+        user.setBannedUntil(null);
+        user.setBanStrikeCount(0);
+        user.setBanWindowStart(null);
+        userRepository.save(user);
     }
 }

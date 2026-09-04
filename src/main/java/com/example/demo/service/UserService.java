@@ -15,4 +15,6 @@ public interface UserService {
     void sendResetPasswordEmail(String email, String lang) throws MessagingException;
 
     void resetPassword(String token, String newPassword);
+
+    void unbanUser(Long id);
 }

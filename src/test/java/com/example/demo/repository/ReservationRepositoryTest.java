@@ -9,7 +9,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -26,14 +28,12 @@ class ReservationRepositoryTest {
     private Apartment apartment;
     private User user;
 
-    // Existing reservation: 2025-07-10 to 2025-07-20
     private static final LocalDate EXISTING_START = LocalDate.of(2025, 7, 10);
     private static final LocalDate EXISTING_END   = LocalDate.of(2025, 7, 20);
 
     @BeforeEach
     void setUp() {
         User u = new User();
-        u.setUsername("john");
         u.setEmail("john@test.com");
         u.setRole("client");
         u.setName("John");
@@ -48,8 +48,6 @@ class ReservationRepositoryTest {
         reservationRepository.save(new Reservation(null, apartment, EXISTING_START, EXISTING_END,
                 2L, ReservationStatus.CONFIRMED, user, "john@test.com", "ua", null));
     }
-
-    // --- findBookedApartmentIds ---
 
     @Test
     void findBookedApartmentIds_ShouldReturnId_WhenCheckInOverlaps() {
@@ -91,8 +89,6 @@ class ReservationRepositoryTest {
 
         assertTrue(result.isEmpty());
     }
-
-    // --- findByApartment_IdAndStatusIn ---
 
     @Test
     void findByApartmentIdAndStatusIn_ShouldReturnConfirmedAndPending() {
@@ -143,8 +139,6 @@ class ReservationRepositoryTest {
         assertTrue(result.isEmpty());
     }
 
-    // --- deleteByStatus ---
-
     @Test
     void deleteByStatus_ShouldDeleteOnlyMatchingReservations() {
         reservationRepository.save(new Reservation(null, apartment,
@@ -163,5 +157,37 @@ class ReservationRepositoryTest {
         reservationRepository.deleteByStatus(ReservationStatus.CANCELED);
 
         assertEquals(1, reservationRepository.count());
+    }
+
+    @Test
+    void countByUserIdAndStatusAndCreatedAtAfter_ShouldCountOnlyMatchingPendingWithinWindow() {
+        reservationRepository.save(new Reservation(null, apartment,
+                LocalDate.of(2025, 9, 1), LocalDate.of(2025, 9, 5),
+                2L, ReservationStatus.PENDING, user, "john@test.com", "ua", null));
+
+        long count = reservationRepository.countByUser_IdAndStatusAndCreatedAtAfter(
+                user.getId(), ReservationStatus.PENDING, Instant.now().minus(1, ChronoUnit.HOURS));
+
+        assertEquals(1, count);
+    }
+
+    @Test
+    void countByUserIdAndStatusAndCreatedAtAfter_ShouldExcludeOlderThanWindow() {
+        reservationRepository.save(new Reservation(null, apartment,
+                LocalDate.of(2025, 9, 1), LocalDate.of(2025, 9, 5),
+                2L, ReservationStatus.PENDING, user, "john@test.com", "ua", null));
+
+        long count = reservationRepository.countByUser_IdAndStatusAndCreatedAtAfter(
+                user.getId(), ReservationStatus.PENDING, Instant.now().plus(1, ChronoUnit.HOURS));
+
+        assertEquals(0, count);
+    }
+
+    @Test
+    void countByUserIdAndStatusAndCreatedAtAfter_ShouldExcludeDifferentStatus() {
+        long count = reservationRepository.countByUser_IdAndStatusAndCreatedAtAfter(
+                user.getId(), ReservationStatus.PENDING, Instant.now().minus(1, ChronoUnit.HOURS));
+
+        assertEquals(0, count);
     }
 }

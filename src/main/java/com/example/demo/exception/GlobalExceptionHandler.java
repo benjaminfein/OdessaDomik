@@ -45,6 +45,19 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
+    @ExceptionHandler(UserBannedException.class)
+    public ResponseEntity<Map<String, Object>> handleUserBanned(UserBannedException e) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("message", e.getMessage());
+        body.put("bannedUntil", e.getBannedUntil().toString());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
+    @ExceptionHandler(ReservationsLockedDownException.class)
+    public ResponseEntity<Map<String, Object>> handleReservationsLockedDown(ReservationsLockedDownException e) {
+        return error(HttpStatus.TOO_MANY_REQUESTS, e.getMessage());
+    }
+
     @ExceptionHandler(InvalidOrExpiredTokenException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidOrExpiredToken(InvalidOrExpiredTokenException e) {
         return error(HttpStatus.BAD_REQUEST, e.getMessage());
