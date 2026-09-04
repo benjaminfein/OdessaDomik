@@ -50,13 +50,11 @@ class UserControllerTest {
     @MockBean private JavaMailSenderImpl javaMailSender;
 
     private User confirmedUser() {
-        User u = new User(1L, "alice", "alice@test.com", "+380991234567", "client", "Alice", "encodedPwd");
+        User u = new User(1L, "alice@test.com", "+380991234567", "client", "Alice", "encodedPwd");
         u.setEmailConfirmed(true);
         u.setDateOfCreated(new Date());
         return u;
     }
-
-    // --- POST /api/user/login ---
 
     @Test
     void login_ShouldReturn200WithToken_WhenCredentialsValid() throws Exception {
@@ -112,11 +110,9 @@ class UserControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // --- POST /api/user/register ---
-
     @Test
     void register_ShouldReturn200_WhenValidData() throws Exception {
-        CreateUserDTO dto = new CreateUserDTO("alice", "alice@test.com", "Alice",
+        CreateUserDTO dto = new CreateUserDTO("alice@test.com", "Alice",
                 "+380991234567", "client", "password123", "ua");
 
         when(userRepository.findByEmail("alice@test.com")).thenReturn(Optional.empty());
@@ -132,7 +128,7 @@ class UserControllerTest {
 
     @Test
     void register_ShouldReturn400_WhenEmailAlreadyExists() throws Exception {
-        CreateUserDTO dto = new CreateUserDTO("alice", "taken@test.com", "Alice",
+        CreateUserDTO dto = new CreateUserDTO("taken@test.com", "Alice",
                 null, null, "password123", "ua");
 
         when(userRepository.findByEmail("taken@test.com")).thenReturn(Optional.of(confirmedUser()));
@@ -146,7 +142,7 @@ class UserControllerTest {
 
     @Test
     void register_ShouldReturn400_WhenPasswordTooShort() throws Exception {
-        CreateUserDTO dto = new CreateUserDTO("alice", "alice@test.com", "Alice",
+        CreateUserDTO dto = new CreateUserDTO("alice@test.com", "Alice",
                 null, null, "pwd", "ua");
 
         mockMvc.perform(post("/api/user/register")
@@ -154,8 +150,6 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
     }
-
-    // --- GET /api/user/profile (authenticated) ---
 
     @Test
     void getProfile_ShouldReturn200_WhenAuthenticated() throws Exception {
@@ -174,21 +168,18 @@ class UserControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // --- GET /api/user/allUsers (admin only) ---
-
     @Test
     void getAllUsers_ShouldReturn200_WhenAdmin() throws Exception {
         UserDTO userDTO = new UserDTO();
-        userDTO.setUsername("alice");
+        userDTO.setEmail("alice@test.com");
         when(userService.getAllUsers()).thenReturn(List.of(userDTO));
 
         mockMvc.perform(get("/api/user/allUsers")
                         .with(jwt().authorities(new SimpleGrantedAuthority("admin"))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].username").value("alice"));
+                .andExpect(jsonPath("$[0].email").value("alice@test.com"));
     }
 
-    // On dev profile admin endpoints are open to all roles
     @Test
     void getAllUsers_ShouldReturn200_WhenClientRole_OnDev() throws Exception {
         when(userService.getAllUsers()).thenReturn(List.of());
@@ -197,8 +188,6 @@ class UserControllerTest {
                         .with(jwt().authorities(new SimpleGrantedAuthority("client"))))
                 .andExpect(status().isOk());
     }
-
-    // --- DELETE /api/user/delete/{id} (admin only) ---
 
     @Test
     void deleteUser_ShouldReturn200_WhenAdmin() throws Exception {
@@ -211,7 +200,53 @@ class UserControllerTest {
                 .andExpect(content().string("User deleted successfully!"));
     }
 
-    // --- GET /api/user/confirm (public) ---
+    @Test
+    void getUser_ShouldReturn200_WhenAuthenticated() throws Exception {
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId(1L);
+        userDTO.setEmail("alice@test.com");
+        when(userService.getUserById(1L)).thenReturn(userDTO);
+
+        mockMvc.perform(get("/api/user/1")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("client"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("alice@test.com"));
+    }
+
+    @Test
+    void getUser_ShouldReturn401_WhenNotAuthenticated() throws Exception {
+        mockMvc.perform(get("/api/user/1"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void updateUser_ShouldReturn200_WhenAuthenticated() throws Exception {
+        UserDTO requestDto = new UserDTO();
+        requestDto.setName("Alice Updated");
+
+        UserDTO updatedDto = new UserDTO();
+        updatedDto.setId(1L);
+        updatedDto.setEmail("alice@test.com");
+        updatedDto.setName("Alice Updated");
+        when(userService.updateUser(eq(1L), any())).thenReturn(updatedDto);
+
+        mockMvc.perform(put("/api/user/1")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("client")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Alice Updated"));
+    }
+
+    @Test
+    void unbanUser_ShouldReturn200_WhenAdmin() throws Exception {
+        doNothing().when(userService).unbanUser(1L);
+
+        mockMvc.perform(put("/api/user/1/unban")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("admin"))))
+                .andExpect(status().isOk())
+                .andExpect(content().string("User unbanned successfully!"));
+    }
 
     @Test
     void confirmEmail_ShouldReturn200_WhenTokenValid() throws Exception {
@@ -227,8 +262,6 @@ class UserControllerTest {
                 .andExpect(content().string("Email confirmed successfully"));
     }
 
-    // --- POST /api/user/forgot-password (public) ---
-
     @Test
     void forgotPassword_ShouldReturn200() throws Exception {
         doNothing().when(userService).sendResetPasswordEmail(any(), any());
@@ -238,8 +271,6 @@ class UserControllerTest {
                         .param("lang", "ua"))
                 .andExpect(status().isOk());
     }
-
-    // --- POST /api/user/reset-password (public) ---
 
     @Test
     void resetPassword_ShouldReturn200() throws Exception {

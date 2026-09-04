@@ -1,10 +1,12 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.ApartmentDTO;
+import com.example.demo.dto.BookedDateRangeDTO;
 import com.example.demo.dto.ReservationDTO;
 import com.example.demo.enums.ReservationStatus;
 import com.example.demo.exception.ApartmentNotFoundException;
 import com.example.demo.service.ApartmentService;
+import com.example.demo.service.DateRangeRuleService;
 import com.example.demo.service.ReservationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -38,6 +40,7 @@ class ApartmentControllerTest {
 
     @MockBean private ApartmentService apartmentService;
     @MockBean private ReservationService reservationService;
+    @MockBean private DateRangeRuleService dateRangeRuleService;
     @MockBean private JavaMailSenderImpl javaMailSender;
 
     private ApartmentDTO sampleDto() {
@@ -49,8 +52,6 @@ class ApartmentControllerTest {
         return dto;
     }
 
-    // --- GET /api/apartments (public) ---
-
     @Test
     void getAllApartments_ShouldReturn200_WithoutAuth() throws Exception {
         when(apartmentService.getAllApartments()).thenReturn(List.of(sampleDto()));
@@ -59,8 +60,6 @@ class ApartmentControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Test Apartment"));
     }
-
-    // --- GET /api/apartments/{id} (public) ---
 
     @Test
     void getApartmentById_ShouldReturn200_WhenFound() throws Exception {
@@ -79,8 +78,6 @@ class ApartmentControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    // --- POST /api/apartments (admin only) ---
-
     @Test
     void createApartment_ShouldReturn201_WhenAdmin() throws Exception {
         ApartmentDTO dto = sampleDto();
@@ -95,8 +92,6 @@ class ApartmentControllerTest {
                 .andExpect(jsonPath("$.name").value("Test Apartment"));
     }
 
-    // On dev profile (restrictAdminEndpoints=false) admin endpoints are public,
-    // so unauthenticated requests succeed. Security is enforced on prod profile.
     @Test
     void createApartment_ShouldReturn201_WhenNotAuthenticated_OnDev() throws Exception {
         when(apartmentService.createApartment(any())).thenReturn(sampleDto());
@@ -106,8 +101,6 @@ class ApartmentControllerTest {
                         .content(objectMapper.writeValueAsString(sampleDto())))
                 .andExpect(status().isCreated());
     }
-
-    // --- PUT /api/apartments/{id} (admin only) ---
 
     @Test
     void updateApartment_ShouldReturn200_WhenAdmin() throws Exception {
@@ -121,8 +114,6 @@ class ApartmentControllerTest {
                 .andExpect(jsonPath("$.name").value("Test Apartment"));
     }
 
-    // --- DELETE /api/apartments/{id} (admin only) ---
-
     @Test
     void deleteApartment_ShouldReturn200_WhenAdmin() throws Exception {
         doNothing().when(apartmentService).deleteApartment(1L);
@@ -132,8 +123,6 @@ class ApartmentControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string("Apartment deleted successfully!"));
     }
-
-    // --- GET /api/apartments/available (public) ---
 
     @Test
     void getAvailableApartments_ShouldReturn200_WithDates() throws Exception {
@@ -155,8 +144,6 @@ class ApartmentControllerTest {
                 .andExpect(status().isOk());
     }
 
-    // --- GET /api/apartments/get-reservations (admin only) ---
-
     @Test
     void getAllReservations_ShouldReturn200_WhenAdmin() throws Exception {
         ReservationDTO res = new ReservationDTO(1L, 1L,
@@ -170,7 +157,6 @@ class ApartmentControllerTest {
                 .andExpect(jsonPath("$[0].clientEmail").value("john@test.com"));
     }
 
-    // On dev profile admin endpoints are open to all — client role also returns 200
     @Test
     void getAllReservations_ShouldReturn200_WhenClientRole_OnDev() throws Exception {
         when(reservationService.getAllReservations()).thenReturn(List.of());
@@ -180,8 +166,6 @@ class ApartmentControllerTest {
                 .andExpect(status().isOk());
     }
 
-    // --- DELETE /api/apartments/delete-reservation/{id} (admin only) ---
-
     @Test
     void deleteReservation_ShouldReturn200_WhenAdmin() throws Exception {
         doNothing().when(reservationService).deleteReservation(1L);
@@ -190,8 +174,6 @@ class ApartmentControllerTest {
                         .with(jwt().authorities(new SimpleGrantedAuthority("admin"))))
                 .andExpect(status().isOk());
     }
-
-    // --- DELETE /api/apartments/delete-pending (admin only) ---
 
     @Test
     void deletePendingReservations_ShouldReturn200_WhenAdmin() throws Exception {
@@ -203,8 +185,6 @@ class ApartmentControllerTest {
                 .andExpect(content().string("All pending reservations deleted."));
     }
 
-    // --- PUT /api/apartments/confirm-reservation/{id} (admin only) ---
-
     @Test
     void confirmReservation_ShouldReturn200_WhenAdmin() throws Exception {
         doNothing().when(reservationService).confirmReservation(1L);
@@ -213,8 +193,6 @@ class ApartmentControllerTest {
                         .with(jwt().authorities(new SimpleGrantedAuthority("admin"))))
                 .andExpect(status().isOk());
     }
-
-    // --- PUT /api/apartments/cancel-reservation/{id} (admin only) ---
 
     @Test
     void cancelReservation_ShouldReturn200_WhenAdmin() throws Exception {
@@ -225,8 +203,6 @@ class ApartmentControllerTest {
                 .andExpect(status().isOk());
     }
 
-    // --- PUT /api/apartments/reservation-on-hold/{id} (client or admin) ---
-
     @Test
     void placeReservationOnHold_ShouldReturn200_WhenAuthenticated() throws Exception {
         doNothing().when(reservationService).pendingReservation(1L);
@@ -234,5 +210,71 @@ class ApartmentControllerTest {
         mockMvc.perform(put("/api/apartments/reservation-on-hold/1")
                         .with(jwt().authorities(new SimpleGrantedAuthority("client"))))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void getBookedDates_ShouldReturn200() throws Exception {
+        BookedDateRangeDTO range = new BookedDateRangeDTO(
+                LocalDate.of(2025, 7, 1), LocalDate.of(2025, 7, 7), LocalDate.of(2025, 7, 8));
+        when(reservationService.getBookedDateRanges(1L)).thenReturn(List.of(range));
+
+        mockMvc.perform(get("/api/apartments/1/booked-dates"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].checkIn").value("2025-07-01"));
+    }
+
+    @Test
+    void getMinStay_ShouldReturn200() throws Exception {
+        when(dateRangeRuleService.getEffectiveMinStay(eq(1L), any())).thenReturn(3);
+
+        mockMvc.perform(get("/api/apartments/1/min-stay").param("checkIn", "2025-07-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.minStay").value(3));
+    }
+
+    @Test
+    void getPrice_ShouldReturn200() throws Exception {
+        when(reservationService.calculatePrice(eq(1L), any(), any(), eq(2L))).thenReturn(5000);
+
+        mockMvc.perform(get("/api/apartments/1/price")
+                        .param("checkIn", "2025-07-01")
+                        .param("checkOut", "2025-07-07")
+                        .param("guestCount", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalPrice").value(5000));
+    }
+
+    @Test
+    void createReservation_ShouldReturn201_WhenAuthenticated() throws Exception {
+        ReservationDTO dto = new ReservationDTO(null, 1L,
+                LocalDate.of(2025, 7, 1), LocalDate.of(2025, 7, 7),
+                2L, ReservationStatus.PENDING, 1L, "john@test.com", "ua", null, null);
+        ReservationDTO saved = new ReservationDTO(1L, 1L,
+                LocalDate.of(2025, 7, 1), LocalDate.of(2025, 7, 7),
+                2L, ReservationStatus.PENDING, 1L, "john@test.com", "ua", 5000, null);
+        when(reservationService.createReservation(any())).thenReturn(saved);
+
+        mockMvc.perform(post("/api/apartments/create-reservation")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("client")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1));
+    }
+
+    @Test
+    void getReservationsByApartment_ShouldReturn200_WhenAdmin() throws Exception {
+        ReservationDTO res = new ReservationDTO(1L, 1L,
+                LocalDate.of(2025, 7, 1), LocalDate.of(2025, 7, 7),
+                2L, ReservationStatus.CONFIRMED, 1L, "john@test.com", "ua", null, null);
+        when(reservationService.getReservationsByApartmentAndDateRange(eq(1L), any(), any()))
+                .thenReturn(List.of(res));
+
+        mockMvc.perform(get("/api/apartments/1/reservations")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("admin")))
+                        .param("from", "2025-07-01")
+                        .param("to", "2025-07-31"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].clientEmail").value("john@test.com"));
     }
 }
