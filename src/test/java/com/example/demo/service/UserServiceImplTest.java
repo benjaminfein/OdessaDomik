@@ -16,7 +16,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,31 +42,27 @@ class UserServiceImplTest {
         ReflectionTestUtils.setField(userService, "frontendUrl", "http://localhost:3000");
     }
 
-    // --- getAllUsers ---
-
     @Test
     void getAllUsers_ShouldReturnMappedDTOs() {
-        User u1 = new User(1L, "alice", "alice@test.com", null, "client", "Alice", "pwd");
-        User u2 = new User(2L, "bob", "bob@test.com", null, "admin", "Bob", "pwd");
+        User u1 = new User(1L, "alice@test.com", null, "client", "Alice", "pwd");
+        User u2 = new User(2L, "bob@test.com", null, "admin", "Bob", "pwd");
         when(userRepository.findAll()).thenReturn(List.of(u1, u2));
 
         List<UserDTO> result = userService.getAllUsers();
 
         assertEquals(2, result.size());
-        assertEquals("alice", result.get(0).getUsername());
-        assertEquals("bob", result.get(1).getUsername());
+        assertEquals("alice@test.com", result.get(0).getEmail());
+        assertEquals("bob@test.com", result.get(1).getEmail());
     }
-
-    // --- getUserById ---
 
     @Test
     void getUserById_ShouldReturnDTO_WhenFound() {
-        User user = new User(1L, "alice", "alice@test.com", null, "client", "Alice", "pwd");
+        User user = new User(1L, "alice@test.com", null, "client", "Alice", "pwd");
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         UserDTO result = userService.getUserById(1L);
 
-        assertEquals("alice", result.getUsername());
+        assertEquals("Alice", result.getName());
         assertEquals("alice@test.com", result.getEmail());
     }
 
@@ -75,33 +73,28 @@ class UserServiceImplTest {
         assertThrows(RuntimeException.class, () -> userService.getUserById(99L));
     }
 
-    // --- updateUser ---
-
     @Test
     void updateUser_ShouldUpdateAndReturnDTO() {
-        User existing = new User(1L, "alice", "alice@test.com", null, "client", "Alice", "pwd");
+        User existing = new User(1L, "alice@test.com", null, "client", "Alice", "pwd");
         UserDTO dto = new UserDTO();
-        dto.setUsername("alice2");
         dto.setEmail("alice@test.com");
         dto.setName("Alice Updated");
         dto.setPhoneNumber("+380991234567");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(userRepository.existsByEmail("alice@test.com")).thenReturn(true);
-        when(userRepository.existsByUsername("alice2")).thenReturn(false);
         when(userRepository.save(any())).thenReturn(existing);
 
         UserDTO result = userService.updateUser(1L, dto);
 
-        assertEquals("alice2", result.getUsername());
+        assertEquals("Alice Updated", result.getName());
         verify(userRepository).save(existing);
     }
 
     @Test
     void updateUser_ShouldThrow_WhenEmailAlreadyTaken() {
-        User existing = new User(1L, "alice", "alice@test.com", null, "client", "Alice", "pwd");
+        User existing = new User(1L, "alice@test.com", null, "client", "Alice", "pwd");
         UserDTO dto = new UserDTO();
-        dto.setUsername("alice");
         dto.setEmail("taken@test.com");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
@@ -112,25 +105,8 @@ class UserServiceImplTest {
     }
 
     @Test
-    void updateUser_ShouldThrow_WhenUsernameAlreadyTaken() {
-        User existing = new User(1L, "alice", "alice@test.com", null, "client", "Alice", "pwd");
-        UserDTO dto = new UserDTO();
-        dto.setUsername("takenUser");
-        dto.setEmail("alice@test.com");
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(userRepository.existsByEmail("alice@test.com")).thenReturn(true);
-        when(userRepository.existsByUsername("takenUser")).thenReturn(true);
-
-        assertThrows(RuntimeException.class, () -> userService.updateUser(1L, dto));
-        verify(userRepository, never()).save(any());
-    }
-
-    // --- sendResetPasswordEmail ---
-
-    @Test
     void sendResetPasswordEmail_ShouldSendEmail_WhenUserExists() throws Exception {
-        User user = new User(1L, "alice", "alice@test.com", null, "client", "Alice", "pwd");
+        User user = new User(1L, "alice@test.com", null, "client", "Alice", "pwd");
         when(userRepository.findByEmail("alice@test.com")).thenReturn(Optional.of(user));
 
         userService.sendResetPasswordEmail("alice@test.com", "ua");
@@ -148,11 +124,9 @@ class UserServiceImplTest {
         verify(emailServiceImpl, never()).sendEmail(any(), any(), any());
     }
 
-    // --- resetPassword ---
-
     @Test
     void resetPassword_ShouldEncodeAndSavePassword_WhenTokenValid() {
-        User user = new User(1L, "alice", "alice@test.com", null, "client", "Alice", "pwd");
+        User user = new User(1L, "alice@test.com", null, "client", "Alice", "pwd");
         PasswordResetToken token = new PasswordResetToken(1L, "valid-token",
                 LocalDateTime.now().minusMinutes(10), LocalDateTime.now().plusHours(1), user);
 
@@ -176,7 +150,7 @@ class UserServiceImplTest {
 
     @Test
     void resetPassword_ShouldThrow_WhenTokenExpired() {
-        User user = new User(1L, "alice", "alice@test.com", null, "client", "Alice", "pwd");
+        User user = new User(1L, "alice@test.com", null, "client", "Alice", "pwd");
         PasswordResetToken token = new PasswordResetToken(1L, "expired-token",
                 LocalDateTime.now().minusDays(2), LocalDateTime.now().minusDays(1), user);
 
@@ -184,6 +158,31 @@ class UserServiceImplTest {
 
         assertThrows(RuntimeException.class,
                 () -> userService.resetPassword("expired-token", "newPassword123"));
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void unbanUser_ShouldResetBanFields() {
+        User user = new User(1L, "alice@test.com", null, "client", "Alice", "pwd");
+        user.setBannedUntil(Instant.now().plus(30, ChronoUnit.MINUTES));
+        user.setBanStrikeCount(1);
+        user.setBanWindowStart(Instant.now().minusSeconds(60));
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        userService.unbanUser(1L);
+
+        assertNull(user.getBannedUntil());
+        assertEquals(0, user.getBanStrikeCount());
+        assertNull(user.getBanWindowStart());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void unbanUser_ShouldThrow_WhenNotFound() {
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> userService.unbanUser(99L));
         verify(userRepository, never()).save(any());
     }
 }

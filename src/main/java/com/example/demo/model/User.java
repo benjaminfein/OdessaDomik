@@ -1,12 +1,11 @@
 package com.example.demo.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.util.Date;
 
 @Entity
@@ -18,8 +17,6 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name = "username", unique = true)
-    private String username;
     @Column(name = "email", unique = true)
     private String email;
     @Column(name = "phone_number")
@@ -36,39 +33,19 @@ public class User {
     private Boolean emailConfirmed = false;
     @Column(name = "lang")
     private String lang;
+    @Column(name = "banned_until")
+    private Instant bannedUntil;
+    @Column(name = "ban_strike_count")
+    private Integer banStrikeCount = 0;
+    @Column(name = "ban_window_start")
+    private Instant banWindowStart;
 
-    public User(Long id, String username, String email, String phoneNumber, String role, String name, String password) {
+    public User(Long id, String email, String phoneNumber, String role, String name, String password) {
         this.id = id;
-        this.username = username;
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.role = role;
         this.name = name;
         this.password = password;
-    }
-
-    public User(String username, String email, String phoneNumber, String role, String name, String password) {
-        this.username = username;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.role = role;
-        this.name = name;
-        this.password = password;
-    }
-
-    public User(@NotEmpty String username,
-                @NotEmpty String email,
-                String phoneNumber,
-                String role,
-                @NotEmpty String name,
-                @NotEmpty @Size(min = 6, message = "Minimum password length is 6 characters") String password,
-                @NotEmpty String lang) {
-        this.username = username;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.role = role;
-        this.name = name;
-        this.password = password;
-        this.lang = lang;
     }
 }

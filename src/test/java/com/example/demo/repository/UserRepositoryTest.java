@@ -27,7 +27,6 @@ class UserRepositoryTest {
     @BeforeEach
     void setUp() {
         client = new User();
-        client.setUsername("alice");
         client.setEmail("alice@test.com");
         client.setRole("client");
         client.setName("Alice");
@@ -37,7 +36,6 @@ class UserRepositoryTest {
         client = userRepository.save(client);
 
         admin = new User();
-        admin.setUsername("admin");
         admin.setEmail("admin@test.com");
         admin.setRole("admin");
         admin.setName("Admin");
@@ -46,9 +44,7 @@ class UserRepositoryTest {
         admin.setDateOfCreated(new Date());
         admin = userRepository.save(admin);
 
-        // Created 2 days ago, not confirmed
         unconfirmedOld = new User();
-        unconfirmedOld.setUsername("old_unconfirmed");
         unconfirmedOld.setEmail("old@test.com");
         unconfirmedOld.setRole("client");
         unconfirmedOld.setName("Old");
@@ -57,9 +53,7 @@ class UserRepositoryTest {
         unconfirmedOld.setDateOfCreated(Date.from(Instant.now().minusSeconds(2 * 24 * 60 * 60)));
         unconfirmedOld = userRepository.save(unconfirmedOld);
 
-        // Created just now, not confirmed
         unconfirmedNew = new User();
-        unconfirmedNew.setUsername("new_unconfirmed");
         unconfirmedNew.setEmail("new@test.com");
         unconfirmedNew.setRole("client");
         unconfirmedNew.setName("New");
@@ -74,7 +68,7 @@ class UserRepositoryTest {
         Optional<User> result = userRepository.findByEmail("alice@test.com");
 
         assertTrue(result.isPresent());
-        assertEquals("alice", result.get().getUsername());
+        assertEquals("Alice", result.get().getName());
     }
 
     @Test
@@ -127,15 +121,5 @@ class UserRepositoryTest {
     @Test
     void existsByEmail_ShouldReturnFalse_WhenNotExists() {
         assertFalse(userRepository.existsByEmail("nobody@test.com"));
-    }
-
-    @Test
-    void existsByUsername_ShouldReturnTrue_WhenExists() {
-        assertTrue(userRepository.existsByUsername("alice"));
-    }
-
-    @Test
-    void existsByUsername_ShouldReturnFalse_WhenNotExists() {
-        assertFalse(userRepository.existsByUsername("nobody"));
     }
 }

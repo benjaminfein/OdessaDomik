@@ -24,7 +24,7 @@ class CustomUserDetailsServiceTest {
 
     @Test
     void loadUserByUsername_ShouldReturnUserDetails_WhenFound() {
-        User user = new User(1L, "alice", "alice@test.com", null, "client", "Alice", "encodedPwd");
+        User user = new User(1L, "alice@test.com", null, "client", "Alice", "encodedPwd");
         when(userRepository.findByEmail("alice@test.com")).thenReturn(Optional.of(user));
 
         UserDetails details = customUserDetailsService.loadUserByUsername("alice@test.com");

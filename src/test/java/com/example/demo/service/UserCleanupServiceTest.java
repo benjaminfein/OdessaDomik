@@ -26,7 +26,7 @@ class UserCleanupServiceTest {
 
     @Test
     void deleteUnconfirmedUsers_ShouldDeleteUsersOlderThan24Hours() {
-        User staleUser = new User(1L, "stale", "stale@test.com", null, "client", "Stale", "pwd");
+        User staleUser = new User(1L, "stale@test.com", null, "client", "Stale", "pwd");
         when(userRepository.findByEmailConfirmedFalseAndDateOfCreatedBefore(any(Date.class)))
                 .thenReturn(List.of(staleUser));
 

@@ -1,7 +1,7 @@
 package com.example.demo.exception;
 
-// Carries which field caused the conflict (email/username) so the frontend
-// can highlight the specific form field instead of showing a generic error.
+// Carries which field caused the conflict so the frontend can highlight the
+// specific form field instead of showing a generic error.
 public class DuplicateUserException extends RuntimeException {
     private final String field;
 
